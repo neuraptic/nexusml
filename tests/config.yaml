@@ -1,0 +1,90 @@
+general:
+  enable_demo_tasks: true
+jobs:
+  abort_upload_after: 7
+  billing_time: 02:00
+  max_workers: 5
+limits:
+  organizations:
+    num_organizations: 1000
+    picture_size: 409600
+    waitlist: 10000
+  quotas:
+    default_plan:
+      max_apps: 3
+      max_collaborators: 3
+      max_cpu_hours: 0
+      max_deployments: 0
+      max_examples: 10000
+      max_gpu_hours: 0
+      max_predictions: 1000
+      max_roles: 5
+      max_tasks: 1
+      max_users: 10
+      space_limit: 52428800
+  requests:
+    cache_timeout: 60
+    max_payload: 819200
+    requests_per_day: 10000000
+    requests_per_hour: 1000000
+    requests_per_minute: 10000
+    requests_per_second: 1000
+  tasks:
+    max_preloaded_categories: 100
+    picture_size: 409600
+notifications:
+  interval: 600
+  mail_port: 587
+  max_source_events: 3
+  use_ssl: false
+  use_tls: true
+security:
+  api_keys:
+    expiration: 2592000
+  public_id:
+    min_length: 8
+server:
+  api_url: /v0
+services:
+  active_learning:
+    enabled: true
+    max_examples_per_query: 50
+    query_interval: 7
+  continual_learning:
+    cpu_hard_limit: 2000.0
+    enabled: true
+    gpu_hard_limit: 1000.0
+    max_cpu_quota: 900.0
+    max_days: 28.0
+    max_gpu_quota: 450.0
+    min_cpu_quota: 600.0
+    min_days: 7.0
+    min_gpu_quota: 300.0
+    min_sample: 0.2
+  inference:
+    enabled: true
+  monitoring:
+    enabled: true
+    ood_predictions:
+      min_sample: 100
+      sensitivity: 0.5
+      smoothing: 0.8
+    refresh_interval: 100
+  testing:
+    enabled: true
+storage:
+  database:
+    type: mysql
+    uri: mysql+pymysql://<user>:<password>@localhost:3306/<database>
+  files:
+    backend: s3
+    local:
+      max_upload_size: 104857600
+      root_path: C:\Users\Mikel\AppData\Local\NexusML\NexusML
+      url_expiration: 600
+    s3:
+      max_upload_size: 104857600
+      url_expiration: 600
+views:
+  default_items_per_page: 6
+  max_items_per_page: 100

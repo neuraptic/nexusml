@@ -20,3 +20,11 @@ API. As a result, interactions between the engine and the main API relied heavil
 
 We are planning a comprehensive refactor to allow the engine to interact directly with database models. This change 
 will streamline and simplify the integration between the engine and the main API.
+
+## Additional Documentation
+
+The [docs](docs) directory contains additional documentation:
+- [concepts.md](docs/concepts.md): Describes the concepts used in NexusML.
+- [quickstart.md](docs/quickstart.md): Provides a quick start guide for NexusML.
+- [states-and-statuses.md](docs/states-and-statuses.md): Describes NexusML's states and statuses.
+- [what-is-nexusml.md](docs/what-is-nexusml.md): Provides an overview of NexusML.

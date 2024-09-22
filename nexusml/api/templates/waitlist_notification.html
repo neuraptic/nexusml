@@ -1,0 +1,55 @@
+<html>
+
+    <head>
+        <meta charset="UTF-8">
+        <title>{{ app_name }} - Wait List</title>
+        <meta name="description" content="{{ app_name }} - Wait List">
+    </head>
+
+    <body>
+
+        <style>
+            body{
+                color: #202124;
+                font-family: "Open Sans", roboto, sans-serif;
+                font-size: 16px;
+            }
+            svg {
+                display: block;
+                width: 100%;
+                height: 100%;
+            }
+            #logo-container {
+                height: 128px;
+            }
+            #title-container{
+                margin-top: 40px;
+                font-weight: bold;
+                text-align: center;
+            }
+            #notification-container{
+                position: relative;
+                margin: auto;
+                margin-top: 40px;
+                max-width: 50%;
+                border-radius: 0.35em;
+                box-shadow: 0 3px 10px 0 rgba(0, 0, 0, 0.2);
+                padding: 40px;
+            }
+        </style>
+
+        <div id="logo-container">
+            <svg xmlns="http://www.w3.org/2000/svg" width="127px" height="128px" viewBox="0 0 127 128" version="1.1"><g id="surface1"><path style=" stroke:none;fill-rule:evenodd;fill:rgb(0%,60%,100%);fill-opacity:1;" d="M 110.121094 128 L 16.878906 128 C 7.523438 127.957031 -0.0234375 120.347656 0.0234375 111.007812 L 0.0234375 16.992188 C -0.0234375 7.652344 7.523438 0.0429688 16.878906 0 L 110.121094 0 C 119.476562 0.0429688 127.023438 7.652344 126.976562 16.992188 L 126.976562 111.007812 C 127.023438 120.347656 119.476562 127.957031 110.121094 128 Z M 110.121094 128 "/><path style=" stroke:none;fill-rule:evenodd;fill:rgb(100%,100%,100%);fill-opacity:1;" d="M 27.117188 43.367188 L 27.023438 43.367188 L 14.988281 63.871094 L 27.117188 84.378906 L 39.371094 105.238281 L 87.628906 105.238281 L 99.976562 84.378906 L 112.011719 63.917969 L 99.976562 43.367188 L 87.765625 22.761719 L 39.234375 22.761719 Z M 27.117188 43.367188 "/><path style=" stroke:none;fill-rule:nonzero;fill:rgb(0%,60%,100%);fill-opacity:1;" d="M 52.460938 81.394531 L 52.484375 75.8125 L 74.550781 75.8125 L 74.511719 81.394531 Z M 52.460938 81.394531 "/><path style=" stroke:none;fill-rule:nonzero;fill:rgb(0%,60%,100%);fill-opacity:1;" d="M 52.460938 66.996094 L 52.484375 61.414062 L 74.550781 61.414062 L 74.511719 66.996094 Z M 52.460938 66.996094 "/><path style=" stroke:none;fill-rule:nonzero;fill:rgb(0%,60%,100%);fill-opacity:1;" d="M 52.460938 52.179688 L 52.484375 46.597656 L 74.550781 46.597656 L 74.511719 52.179688 Z M 52.460938 52.179688 "/></g></svg>
+        </div>
+
+        <div id="title-container">
+            Hurray! There are new users who want to join NexusML :-)
+        </div>
+
+        <div id="notification-container">
+            Please, contact tech team to scale our system asap and send an email to the users in the wait list (CSV file attached)
+        </div>
+
+    </body>
+
+</html>

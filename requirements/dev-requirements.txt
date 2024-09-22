@@ -1,0 +1,12 @@
+isort
+jwcrypto
+moto < 5.0.0  # In v5.0.0, all decorators are replaced with `mock_aws` (including `mock_s3`)
+myst-parser
+pylint
+pytest < 7.4.0
+pytest-mock
+ruff
+sphinx == 7.3.7
+sphinx_rtd_theme
+sphinxcontrib-applehelp
+yapf
