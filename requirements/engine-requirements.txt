@@ -15,6 +15,7 @@ opencv-python
 pandas
 pillow
 protobuf
+psutil
 pycocotools
 pysoundfile
 pyyaml
@@ -29,6 +30,7 @@ torch
 torchaudio
 torchsummary
 torchvision
+torch_geometric
 tqdm
 transformers
 unidecode
