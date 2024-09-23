@@ -61,7 +61,7 @@ if __name__ == '__main__':
         },
         python_requires='>=3.10',
         package_data={'nexusml': ['api/templates/email_notifications.html',
-                               'api/templates/service_notifications.html',
-                               'api/templates/user_invitation.html',
-                               'api/templates/waitlist_notification.html']}
+                                  'api/templates/service_notifications.html',
+                                  'api/templates/user_invitation.html',
+                                  'api/templates/waitlist_notification.html']}
     )
