@@ -1,3 +1,5 @@
+# TODO: Try to make this module independent from `nexusml.api`
+
 import copy
 from typing import Dict, List, TYPE_CHECKING
 import uuid

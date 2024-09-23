@@ -1,3 +1,5 @@
+# TODO: Try to make this module independent from `nexusml.api`
+
 from abc import ABC
 from abc import abstractmethod
 from dataclasses import dataclass

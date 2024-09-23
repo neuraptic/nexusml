@@ -1,3 +1,5 @@
+# TODO: Try to make this module independent from `nexusml.api`
+
 from typing import Iterable, List, Type, Union
 
 from sqlalchemy import text as sql_text

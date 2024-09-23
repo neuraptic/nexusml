@@ -1,3 +1,5 @@
+# TODO: Try to make this module independent from `nexusml.api`
+
 import abc
 from datetime import datetime
 import json
