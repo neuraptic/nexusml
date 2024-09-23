@@ -88,8 +88,8 @@ from nexusml.enums import OrgFileUse
 from nexusml.enums import PredictionState
 from nexusml.enums import TaskFileUse
 from nexusml.enums import TrainingDevice
-from nexusml.env import AWS_S3_BUCKET
 from nexusml.env import ENV_API_DOMAIN
+from nexusml.env import ENV_AWS_S3_BUCKET
 from nexusml.env import ENV_DB_NAME
 from nexusml.env import ENV_DB_PASSWORD
 from nexusml.env import ENV_DB_USER
@@ -167,7 +167,7 @@ def set_app_config(app: Flask):
         return template_db_uri
 
     test_config = copy.deepcopy(TEST_CONFIG)
-    test_config['storage']['files']['s3']['bucket'] = os.environ[AWS_S3_BUCKET]
+    test_config['storage']['files']['s3']['bucket'] = os.environ[ENV_AWS_S3_BUCKET]
     config.set(test_config)
 
     app.config['SQLALCHEMY_DATABASE_URI'] = _set_db_uri(template_db_uri=test_config['storage']['database']['uri'])

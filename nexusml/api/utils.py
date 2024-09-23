@@ -31,8 +31,8 @@ from nexusml.constants import THUMBNAIL_SIZE
 from nexusml.enums import EngineType
 from nexusml.enums import FileStorageBackend
 from nexusml.env import ENV_API_DOMAIN
-from nexusml.env import ENV_AUTH0_NEXUSML_ACTIONS_CLIENT_ID
-from nexusml.env import ENV_AUTH0_NEXUSML_ACTIONS_CLIENT_SECRET
+from nexusml.env import ENV_AUTH0_CLIENT_ID
+from nexusml.env import ENV_AUTH0_CLIENT_SECRET
 from nexusml.env import ENV_AUTH0_DOMAIN
 from nexusml.env import ENV_AUTH0_JWKS
 from nexusml.env import ENV_RSA_KEY_FILE
@@ -503,8 +503,8 @@ def get_auth0_management_api_token() -> str:
     access_token: str
     payload: dict = {
         'grant_type': 'client_credentials',
-        'client_id': os.environ[ENV_AUTH0_NEXUSML_ACTIONS_CLIENT_ID],
-        'client_secret': os.environ[ENV_AUTH0_NEXUSML_ACTIONS_CLIENT_SECRET],
+        'client_id': os.environ[ENV_AUTH0_CLIENT_ID],
+        'client_secret': os.environ[ENV_AUTH0_CLIENT_SECRET],
         'audience': f'https://{os.environ[ENV_AUTH0_DOMAIN]}/api/v2/'
     }
 

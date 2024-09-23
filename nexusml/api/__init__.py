@@ -34,7 +34,7 @@ from nexusml.database.organizations import create_known_clients_and_reserved_cli
 from nexusml.database.organizations import create_main_admin_and_maintainer
 from nexusml.database.organizations import create_main_organization
 from nexusml.database.subscriptions import create_default_plans
-from nexusml.env import AWS_S3_BUCKET
+from nexusml.env import ENV_AWS_S3_BUCKET
 from nexusml.env import ENV_CELERY_BROKER_URL
 from nexusml.env import ENV_CELERY_RESULT_BACKEND
 from nexusml.env import ENV_DB_NAME
@@ -63,7 +63,7 @@ def create_app(setup_database: bool = True):
     # Set config for Amazon S3
     _config = config.get()
     s3_config = _config['storage']['files']['s3']
-    s3_config['bucket'] = os.environ[AWS_S3_BUCKET]
+    s3_config['bucket'] = os.environ[ENV_AWS_S3_BUCKET]
     config.set(_config)
 
     # Set config for Celery

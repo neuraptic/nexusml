@@ -12,7 +12,6 @@ ENV_API_DOMAIN = 'NEXUSML_API_DOMAIN'
 # Passwords
 ENV_API_CLIENT_SECRET = 'NEXUSML_API_CLIENT_SECRET'
 ENV_MAIL_PASSWORD = 'NEXUSML_API_MAIL_PASS'
-ENV_REDIS_PASS = 'NEXUSML_REDIS_PASS'
 
 # RSA key for signed data
 ENV_RSA_KEY_FILE = 'NEXUSML_API_RSA_KEY_FILE'  # private RSA key file
@@ -50,19 +49,20 @@ ENV_DB_PASSWORD = 'NEXUSML_DB_PASS'
 ######################
 
 # AWS (see https://boto3.amazonaws.com/v1/documentation/api/latest/guide/configuration.html#guide-configuration)
-AWS_ACCOUNT_ID = 'AWS_ACCOUNT_ID'  # AWS account ID
-AWS_ACCESS_KEY_ID = 'AWS_ACCESS_KEY_ID'  # access key for the AWS account
-AWS_SECRET_ACCESS_KEY = 'AWS_SECRET_ACCESS_KEY'  # secret key for the AWS account
-AWS_SESSION_TOKEN = 'AWS_SESSION_TOKEN'  # session key for the AWS account (only needed if using temporary credentials)
-AWS_S3_BUCKET = 'AWS_S3_BUCKET'  # AWS S3 bucket name
+ENV_AWS_ACCESS_KEY_ID = 'AWS_ACCESS_KEY_ID'  # Access key for the AWS account
+ENV_AWS_SECRET_ACCESS_KEY = 'AWS_SECRET_ACCESS_KEY'  # Secret key for the AWS account
+ENV_AWS_S3_BUCKET = 'AWS_S3_BUCKET'  # AWS S3 bucket name
 
 # CELERY
 ENV_CELERY_BROKER_URL = 'NEXUSML_CELERY_BROKER_URL'
 ENV_CELERY_RESULT_BACKEND = 'NEXUSML_CELERY_RESULT_BACKEND'
 
+# REDIS
+ENV_REDIS_PASS = 'NEXUSML_REDIS_PASS'
+
 # AUTH0
-ENV_AUTH0_NEXUSML_ACTIONS_CLIENT_ID = 'AUTH0_NEXUSML_ACTIONS_CLIENT_ID'  # Auth0 client management ID
-ENV_AUTH0_NEXUSML_ACTIONS_CLIENT_SECRET = 'AUTH0_NEXUSML_ACTIONS_CLIENT_SECRET'  # Auth0 client management secret
-ENV_AUTH0_DOMAIN = 'AUTH0_DOMAIN'  # Domain to the Auth0 tenant
-ENV_AUTH0_JWKS = 'AUTH0_JWKS'  # Url to the token verification key sets
-ENV_AUTH0_SIGN_UP_REDIRECT_URL = 'AUTH0_SIGN_UP_REDIRECT_URL'  # Redirect URL after password change
+ENV_AUTH0_DOMAIN = 'NEXUSML_AUTH0_DOMAIN'  # Domain to the Auth0 tenant
+ENV_AUTH0_CLIENT_ID = 'NEXUSML_AUTH0_CLIENT_ID'  # Auth0 client management ID
+ENV_AUTH0_CLIENT_SECRET = 'NEXUSML_AUTH0_CLIENT_SECRET'  # Auth0 client management secret
+ENV_AUTH0_JWKS = 'NEXUSML_AUTH0_JWKS'  # Url to the token verification key sets
+ENV_AUTH0_SIGN_UP_REDIRECT_URL = 'NEXUSML_AUTH0_SIGN_UP_REDIRECT_URL'  # Redirect URL after password change

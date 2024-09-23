@@ -42,6 +42,8 @@ from nexusml.api.views import organizations as organizations_views
 from nexusml.database.organizations import client_scopes
 from nexusml.enums import FileStorageBackend
 from nexusml.env import ENV_AUTH0_JWKS
+from nexusml.env import ENV_AWS_ACCESS_KEY_ID
+from nexusml.env import ENV_AWS_SECRET_ACCESS_KEY
 from nexusml.utils import deprecated
 from tests.api.conftest import empty_db
 from tests.api.conftest import populate_db
@@ -540,10 +542,8 @@ def custom_client(request, client) -> MockClient:
 
 @pytest.fixture(scope='session', autouse=True)
 def aws_credentials():
-    os.environ['AWS_ACCESS_KEY_ID'] = 'testing'
-    os.environ['AWS_SECRET_ACCESS_KEY'] = 'testing'
-    os.environ['AWS_SECURITY_TOKEN'] = 'testing'
-    os.environ['AWS_SESSION_TOKEN'] = 'testing'
+    os.environ[ENV_AWS_ACCESS_KEY_ID] = 'testing'
+    os.environ[ENV_AWS_SECRET_ACCESS_KEY] = 'testing'
 
 
 @pytest.fixture(scope='function')
