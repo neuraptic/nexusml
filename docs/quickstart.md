@@ -27,15 +27,10 @@ Ubuntu is a straightforward process (check the official
 [Ubuntu documentation](https://documentation.ubuntu.com/server/how-to/databases/install-mysql/) for more 
 information):
 
-First, ensure your package index is up-to-date. Open a terminal and run:
+First, update your package index and install MySQL Server:
 
 ```sh
-sudo apt install mysql-server
-```
-
-Next, install the MySQL Server package by running:
-
-```sh
+sudo apt update
 sudo apt install mysql-server
 ```
 
