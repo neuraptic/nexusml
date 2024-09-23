@@ -357,6 +357,16 @@ class NexusMLConfig:
 #       for each Flask app separately or use `current_app.config` directly within each app's context.
 config = NexusMLConfig()
 
+
+##########
+# ENGINE #
+##########
+
+
+def get_engine_type() -> EngineType:
+    return EngineType[config.get('engine')['worker']['type'].upper()]
+
+
 ##########
 # TOKENS #
 ##########
@@ -737,7 +747,3 @@ def camel_to_snake(string: str) -> str:
         str: The converted snake_case string.
     """
     return ''.join(['_' + c.lower() if c.isupper() else c for c in string]).lstrip('_')
-
-
-def get_engine_type() -> EngineType:
-    return EngineType[config.get('engine')['worker']['type'].upper()]
