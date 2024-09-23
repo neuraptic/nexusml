@@ -31,7 +31,6 @@ from nexusml.api.schemas.ai import AIModelRequest
 from nexusml.api.schemas.files import TaskFileRequest
 from nexusml.api.schemas.services import MonitoringServiceTemplatesSchema
 from nexusml.api.utils import FileStorageBackend  # TODO: Change to `enums.py`
-from nexusml.api.utils import get_engine_type
 from nexusml.api.utils import get_file_storage_backend
 from nexusml.constants import DATETIME_FORMAT
 from nexusml.database.ai import AIModelDB
@@ -985,8 +984,7 @@ class LocalEngineWorker(EngineWorker):
                 self._ensure_memory_available()
 
                 # Load and store model
-                engine_type = get_engine_type()
-                engine = get_engine(engine_type=engine_type, task_uuid=task_uuid)
+                engine = LocalEngineWorker(task_uuid=task_uuid)
                 model = engine.load_model(model_uuid=model_uuid)
                 self._models[key] = model
 
