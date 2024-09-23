@@ -660,19 +660,6 @@ def save_thumbnail_to_local_file_store(thumbnail_path: str, file_content: bytes)
 ########################
 
 
-def get_s3_config() -> dict:
-    """
-    Returns S3 configuration.
-
-    Returns:
-        dict: The S3 configuration.
-
-    Raises:
-        KeyError: If the S3 configuration is not found.
-    """
-    return config.get('storage')['files']['s3']
-
-
 def save_thumbnail_to_s3(s3_client, bucket: str, object_key: str):
     """
     Saves a generated thumbnail to an AWS S3 bucket.

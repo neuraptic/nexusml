@@ -1,7 +1,6 @@
 import functools
 import os
 
-import boto3
 from celery import Celery
 from flask_apispec import FlaskApiSpec
 from flask_caching import Cache as FlaskCache
@@ -86,25 +85,6 @@ mail = Mail()
 #########
 
 redis_buffer = StrictRedis.from_url(os.environ[ENV_CELERY_BROKER_URL])
-"""
-Amazon S3
-"""
-
-_s3_client = None
-
-
-def s3_client():
-    """
-    Retrieve a boto3 S3 client instance, initializing it if necessary.
-
-    Returns:
-        boto3.S3.Client: The S3 client instance.
-    """
-    global _s3_client
-    if _s3_client is None:
-        _s3_client = boto3.client('s3')
-    return _s3_client
-
 
 ####################
 # Helper functions #

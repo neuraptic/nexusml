@@ -6,7 +6,6 @@ from typing import Iterable, Type, Union
 from flask import url_for
 
 from nexusml.api.ext import cache
-from nexusml.api.ext import s3_client
 from nexusml.api.resources.base import PermissionDeniedError
 from nexusml.api.resources.base import QuotaError
 from nexusml.api.resources.base import Resource
@@ -22,7 +21,6 @@ from nexusml.api.utils import API_DOMAIN
 from nexusml.api.utils import generate_tmp_token
 from nexusml.api.utils import get_file_storage_backend
 from nexusml.api.utils import get_local_file_storage_config
-from nexusml.api.utils import get_s3_config
 from nexusml.api.utils import save_thumbnail_to_local_file_store
 from nexusml.api.utils import save_thumbnail_to_s3
 from nexusml.constants import ENDPOINT_ORG_FILE
@@ -49,6 +47,8 @@ from nexusml.enums import OrgFileUse
 from nexusml.enums import ResourceAction
 from nexusml.enums import ResourceType
 from nexusml.enums import TaskFileUse
+from nexusml.utils import get_s3_config
+from nexusml.utils import s3_client
 
 
 def _require_file_storage_backend(file_storage_backend: FileStorageBackend):

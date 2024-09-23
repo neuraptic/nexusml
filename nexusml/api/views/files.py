@@ -17,7 +17,6 @@ import jwt
 from marshmallow import fields
 from marshmallow import validate
 
-from nexusml.api.ext import s3_client
 from nexusml.api.resources.base import DuplicateResourceError
 from nexusml.api.resources.base import InvalidDataError
 from nexusml.api.resources.base import Resource
@@ -41,7 +40,6 @@ from nexusml.api.utils import config
 from nexusml.api.utils import generate_tmp_token
 from nexusml.api.utils import get_file_storage_backend
 from nexusml.api.utils import get_local_file_storage_config
-from nexusml.api.utils import get_s3_config
 from nexusml.api.utils import save_thumbnail_to_local_file_store
 from nexusml.api.views.base import create_view
 from nexusml.api.views.core import agent_from_token
@@ -80,6 +78,8 @@ from nexusml.enums import FileType
 from nexusml.enums import OrgFileUse
 from nexusml.enums import ResourceAction
 from nexusml.enums import TaskFileUse
+from nexusml.utils import get_s3_config
+from nexusml.utils import s3_client
 
 _OrgOrTaskFile = Union[OrgFile, TaskFile]
 

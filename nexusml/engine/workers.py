@@ -16,7 +16,6 @@ from sklearn.model_selection import train_test_split
 from sqlalchemy import and_ as sql_and
 import torch
 
-from nexusml.api.ext import s3_client
 from nexusml.api.resources.ai import AIModel
 from nexusml.api.resources.base import dump
 from nexusml.api.resources.examples import Example
@@ -32,7 +31,6 @@ from nexusml.api.schemas.services import MonitoringServiceTemplatesSchema
 from nexusml.api.utils import FileStorageBackend  # TODO: Change to `enums.py`
 from nexusml.api.utils import get_engine_type
 from nexusml.api.utils import get_file_storage_backend
-from nexusml.api.utils import get_s3_config
 from nexusml.constants import DATETIME_FORMAT
 from nexusml.database.ai import AIModelDB
 from nexusml.database.core import db_commit
@@ -67,6 +65,8 @@ from nexusml.statuses import CL_INITIALIZING_TRAINING_STATUS_CODE
 from nexusml.statuses import CL_TRAINING_STATUS_CODE
 from nexusml.statuses import CL_WAITING_STATUS_CODE
 from nexusml.statuses import Status
+from nexusml.utils import get_s3_config
+from nexusml.utils import s3_client
 
 
 class EngineWorker(abc.ABC):

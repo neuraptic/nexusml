@@ -37,7 +37,6 @@ from nexusml.api.resources.organizations import Organization
 from nexusml.api.resources.tasks import Task
 from nexusml.api.utils import API_DOMAIN
 from nexusml.api.utils import config
-from nexusml.api.utils import get_s3_config
 from nexusml.api.views import organizations as organizations_views
 from nexusml.database.organizations import client_scopes
 from nexusml.enums import FileStorageBackend
@@ -45,6 +44,7 @@ from nexusml.env import ENV_AUTH0_JWKS
 from nexusml.env import ENV_AWS_ACCESS_KEY_ID
 from nexusml.env import ENV_AWS_SECRET_ACCESS_KEY
 from nexusml.utils import deprecated
+from nexusml.utils import get_s3_config
 from tests.api.conftest import empty_db
 from tests.api.conftest import populate_db
 from tests.api.conftest import restore_db

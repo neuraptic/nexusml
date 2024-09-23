@@ -11,7 +11,6 @@ from nexusml.api.resources.organizations import Organization
 from nexusml.api.resources.organizations import Role
 from nexusml.api.resources.organizations import User
 from nexusml.api.resources.tasks import Task
-from nexusml.api.utils import get_s3_config
 from nexusml.constants import DATETIME_FORMAT
 from nexusml.constants import PREFIX_ORG_PICTURES
 from nexusml.constants import PREFIX_ORGANIZATIONS
@@ -36,6 +35,7 @@ from nexusml.database.organizations import UserDB
 from nexusml.database.subscriptions import get_active_subscription
 from nexusml.database.subscriptions import quotas
 from nexusml.database.tasks import TaskDB
+from nexusml.utils import get_s3_config
 
 
 def db_commit_and_expire():

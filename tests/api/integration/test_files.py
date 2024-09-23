@@ -38,7 +38,6 @@ from nexusml.api.resources.files import TaskFile
 from nexusml.api.resources.organizations import Organization
 from nexusml.api.resources.tasks import Task
 from nexusml.api.utils import get_local_file_storage_config
-from nexusml.api.utils import get_s3_config
 from nexusml.api.utils import NexusMLConfig
 from nexusml.constants import DATETIME_FORMAT
 from nexusml.constants import ENDPOINT_ORG_FILE
@@ -71,6 +70,7 @@ from nexusml.enums import FileStorageBackend
 from nexusml.enums import FileType
 from nexusml.enums import OrgFileUse
 from nexusml.enums import TaskFileUse
+from nexusml.utils import get_s3_config
 from tests.api.conftest import restore_db
 from tests.api.constants import CLIENT_MAX_THREADS
 from tests.api.constants import TEST_CONFIG

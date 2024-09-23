@@ -14,7 +14,6 @@ from flask_apispec import use_kwargs
 from flask_mail import Message
 
 from nexusml.api.ext import mail
-from nexusml.api.ext import s3_client
 from nexusml.api.resources.base import dump
 from nexusml.api.resources.base import DuplicateResourceError
 from nexusml.api.resources.base import InvalidDataError
@@ -52,7 +51,6 @@ from nexusml.api.schemas.organizations import UserRolesResponseSchema
 from nexusml.api.schemas.organizations import UsersPage
 from nexusml.api.utils import config
 from nexusml.api.utils import decode_api_key
-from nexusml.api.utils import get_s3_config
 from nexusml.api.views.base import create_view
 from nexusml.api.views.common import PermissionAssignmentView
 from nexusml.api.views.core import agent_from_token
@@ -111,6 +109,8 @@ from nexusml.env import ENV_SUPPORT_EMAIL
 from nexusml.statuses import Status
 from nexusml.statuses import task_active_status
 from nexusml.statuses import task_copying_status
+from nexusml.utils import get_s3_config
+from nexusml.utils import s3_client
 
 # Note: This pylint directive is disabled because we are passing `user_id`, `role_id`, or `collaborator_id`
 # to the `agent_id` parameter for greater specificity.
