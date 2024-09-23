@@ -17,7 +17,7 @@
 
 ## Requirements
 
-Check the [dev-requirements.txt](dev-requirements.txt) file for the development dependencies.
+Check the [dev-requirements.txt](requirements/dev-requirements.txt) file for the development dependencies.
 
 ## Coding Style
 
