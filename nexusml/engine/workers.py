@@ -30,6 +30,7 @@ from nexusml.api.resources.tasks import Task
 from nexusml.api.schemas.ai import AIModelRequest
 from nexusml.api.schemas.files import TaskFileRequest
 from nexusml.api.schemas.services import MonitoringServiceTemplatesSchema
+from nexusml.api.utils import get_file_storage_backend
 from nexusml.constants import DATETIME_FORMAT
 from nexusml.database.ai import AIModelDB
 from nexusml.database.core import db_commit
@@ -400,7 +401,7 @@ class EngineWorker(abc.ABC):
         best_model_path, best_model_config_path = get_best_model(mlflow_uri=mlflow_uri, experiment_name='exp1')
         return best_model_path, best_model_config_path
 
-    def train(self, file_storage_backend: FileStorageBackend, model_uuid: Optional[str] = None):
+    def train(self, model_uuid: Optional[str] = None):
         """
         Handles the training or retraining process of a model. If no model_uuid is provided,
         it initiates the first training process. If a model_uuid is provided, the model is retrieved,
@@ -420,7 +421,6 @@ class EngineWorker(abc.ABC):
         7. Perform post-training tasks such as computing monitoring templates, and updating task usage.
 
         Args:
-            file_storage_backend (FileStorageBackend): The file storage backend to use.
             model_uuid (Optional[str]): UUID of the model to be retrained. If None, performs first training.
 
         Returns:
@@ -441,10 +441,7 @@ class EngineWorker(abc.ABC):
         self.update_continual_learning_service_status(code=CL_INITIALIZING_TRAINING_STATUS_CODE)
 
         # Prepare data
-        paths = self.prepare(file_storage_backend=file_storage_backend,
-                             output_path=data_dir_name,
-                             test_size=0.2,
-                             seed=0)
+        paths = self.prepare(output_path=data_dir_name, test_size=0.2, seed=0)
 
         # If model_uuid is None, make the first training
         if model_uuid is None:
@@ -452,10 +449,9 @@ class EngineWorker(abc.ABC):
                                                                                data_dir=data_dir_name,
                                                                                paths=paths)
         else:
+            # Download model
             # Get the file
-            self.get_model_file(model_uuid=model_uuid,
-                                file_storage_backend=file_storage_backend,
-                                output_path=data_dir_name)
+            self.get_model_file(model_uuid=model_uuid, output_path=data_dir_name)
 
             # Zip file
             out_zip_file = os.path.join(data_dir_name, model_uuid)
@@ -485,7 +481,7 @@ class EngineWorker(abc.ABC):
             zipf.write(best_model_path, os.path.basename(best_model_path))
             zipf.write(best_model_config_path, os.path.basename(best_model_config_path))
 
-        self.update_continual_learning_service_status(code=CL_TRAINING_STATUS_CODE)
+        self.update_continual_learning_service_status(code=CL_TRAINING_STATUS_CODE,)
 
         # Get monitoring templates
         with open(paths['data_path'], 'r') as f:
@@ -504,7 +500,6 @@ class EngineWorker(abc.ABC):
 
         # Create model
         self.create_ai_model(model_path=zip_file_name,
-                             file_storage_backend=file_storage_backend,
                              training_device=training_device,
                              training_time=(training_end_time - training_end_time),
                              monitoring_templates=monitoring_templates)
@@ -559,17 +554,13 @@ class EngineWorker(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def get_file(self,
-                 file_uuid: str,
-                 file_storage_backend: FileStorageBackend,
-                 output_path: Optional[str] = None) -> Optional[bytes]:
+    def get_file(self, file_uuid: str, output_path: Optional[str] = None) -> Optional[bytes]:
         """
         Abstract method to retrieve a file by its UUID. Optionally, the file can be saved to an output path.
         If no output path is provided, the file should be loaded into memory.
 
         Args:
             file_uuid (str): UUID of the file to retrieve.
-            file_storage_backend (FileStorageBackend): The file storage backend to use.
             output_path (Optional[str]): Path to save the file. If None, the file is loaded into memory.
 
         Returns:
@@ -614,11 +605,7 @@ class EngineWorker(abc.ABC):
                         # Update the value with the file path
                         el['value'] = os.path.join(output_path, 'files', file_id)
 
-    def prepare(self,
-                file_storage_backend: FileStorageBackend,
-                output_path: str,
-                test_size: float = 0.2,
-                seed: int = 0) -> dict:
+    def prepare(self, output_path: str, test_size: float = 0.2, seed: int = 0) -> dict:
         """
         Prepares the environment by downloading schema, categories, and labeled examples.
         Files associated with the task elements are also downloaded, and data is split into training
@@ -633,7 +620,6 @@ class EngineWorker(abc.ABC):
         6. Save the training and test sets to the output path.
 
         Args:
-            file_storage_backend (FileStorageBackend): The file storage backend to use.
             output_path (str): Directory path where data and files will be saved.
             test_size (float): Fraction of the data to be used as the test set.
             seed (int): Random seed for splitting data into train/test sets.
@@ -703,10 +689,7 @@ class EngineWorker(abc.ABC):
         """
         pass
 
-    def get_model_file(self,
-                       model_uuid: str,
-                       file_storage_backend: FileStorageBackend,
-                       output_path: Optional[str] = None) -> Optional[bytes]:
+    def get_model_file(self, model_uuid: str, output_path: Optional[str] = None) -> Optional[bytes]:
         """
         Retrieves a model file by its UUID and optionally saves it to the specified output path.
         If no output path is provided, the file content is loaded into memory.
@@ -718,7 +701,6 @@ class EngineWorker(abc.ABC):
 
         Args:
             model_uuid (str): UUID of the model file to retrieve.
-            file_storage_backend (FileStorageBackend): The file storage backend to use.
             output_path (Optional[str]): Path to save the file. If None, the file is loaded into memory.
 
         Returns:
@@ -726,9 +708,7 @@ class EngineWorker(abc.ABC):
         """
         model = self.get_model(model_uuid)
         file_uuid = model['file']['uuid']
-        content = self.get_file(file_uuid=file_uuid,
-                                file_storage_backend=file_storage_backend,
-                                output_path=output_path)
+        content = self.get_file(file_uuid, output_path=output_path)
         if content is None:
             os.rename(os.path.join(output_path, file_uuid), os.path.join(output_path, model_uuid))
         else:
@@ -741,7 +721,6 @@ class EngineWorker(abc.ABC):
     @abc.abstractmethod
     def create_ai_model(self,
                         model_path: str,
-                        file_storage_backend: FileStorageBackend,
                         training_device: str,
                         training_time: float,
                         monitoring_templates: Optional[dict] = None):
@@ -752,7 +731,6 @@ class EngineWorker(abc.ABC):
 
         Args:
             model_path (str): Path to the model file.
-            file_storage_backend (FileStorageBackend): The file storage backend to use.
             training_device (str): Device on which the model was trained (e.g., 'GPU', 'CPU').
             training_time (float): Duration of the model training process.
             monitoring_templates (Optional[dict]): Optional monitoring templates for the model.
@@ -890,10 +868,7 @@ class EngineWorker(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def predict(self,
-                environment: AIEnvironment,
-                data: List[dict],
-                file_storage_backend: FileStorageBackend) -> List[dict]:
+    def predict(self, environment: AIEnvironment, data: List[dict]) -> List[dict]:
         pass
 
 
@@ -1171,9 +1146,7 @@ class LocalEngineWorker(EngineWorker):
         examples = Example.dump_batch(examples=example_db_objects, task=self._task)
         return examples
 
-    def get_file(self, file_uuid: str,
-                 file_storage_backend: FileStorageBackend,
-                 output_path: Optional[str] = None) -> Optional[bytes]:
+    def get_file(self, file_uuid: str, output_path: Optional[str] = None) -> Optional[bytes]:
         """
         Downloads a file associated with the task using its UUID. If an output path is provided,
         the file is saved there; otherwise, the file is loaded into memory. The method supports both
@@ -1187,7 +1160,6 @@ class LocalEngineWorker(EngineWorker):
 
         Args:
             file_uuid (str): UUID of the file to retrieve.
-            file_storage_backend (FileStorageBackend): The storage backend to use.
             output_path (Optional[str]): Path to save the file. If None, the file is loaded into memory.
 
         Returns:
@@ -1201,7 +1173,7 @@ class LocalEngineWorker(EngineWorker):
         output_file = os.path.join(output_path, file_uuid)
         file_db_obj = TaskFileDB.get_from_id(id_value=file_uuid)
         file = TaskFile.get(agent=self._cl_service.client, db_object_or_id=file_db_obj, parents=[self._task])
-        if file_storage_backend == FileStorageBackend.S3:
+        if get_file_storage_backend() == FileStorageBackend.S3:
             s3_config = get_s3_config()
             object_key = file.path()
             # Check whether the file exists in S3
@@ -1294,7 +1266,6 @@ class LocalEngineWorker(EngineWorker):
 
     def create_ai_model(self,
                         model_path: str,
-                        file_storage_backend: FileStorageBackend,
                         training_device: str,
                         training_time: float,
                         monitoring_templates: Optional[dict] = None):
@@ -1311,7 +1282,6 @@ class LocalEngineWorker(EngineWorker):
 
         Args:
             model_path (str): Path to the model file to upload.
-            file_storage_backend (FileStorageBackend): The file storage backend to use.
             training_device (str): The device (e.g., GPU, CPU) used to train the model.
             training_time (float): The time taken to train the model.
             monitoring_templates (Optional[dict]): Monitoring templates for the model, if any.
@@ -1322,7 +1292,7 @@ class LocalEngineWorker(EngineWorker):
         task_file = TaskFile.post(agent=self._cl_service.client, data=file_data, parents=[self._task])
 
         # Upload file
-        if file_storage_backend == FileStorageBackend.S3:
+        if get_file_storage_backend() == FileStorageBackend.S3:
             s3_config = get_s3_config()
             s3_client().upload_file(Filename=model_path, Bucket=s3_config['bucket'], Key=task_file.path())
         else:
@@ -1517,14 +1487,11 @@ class LocalEngineWorker(EngineWorker):
         model_manager = LocalEngineWorker._LocalModelManager.get_instance()
         model_manager.load_model(task_uuid=self._task_uuid, environment=environment, model_uuid=model_uuid)
 
-    def predict(self,
-                environment: AIEnvironment,
-                data: List[dict],
-                file_storage_backend: FileStorageBackend) -> List[dict]:
+    def predict(self, environment: AIEnvironment, data: List[dict]) -> List[dict]:
         """
         Prepares data and performs prediction using the model associated with the specified environment.
 
-        Steps:
+        Important steps:
         1. Download data files related to the task and store them in a temporary directory.
         2. Retrieve the local model manager and perform the prediction using the loaded model.
         3. Clean up the temporary directory after prediction.
@@ -1532,7 +1499,6 @@ class LocalEngineWorker(EngineWorker):
         Args:
             environment (AIEnvironment): The environment where the model is deployed.
             data (List[dict]): A list of input data for prediction.
-            file_storage_backend (FileStorageBackend): The file storage backend to use.
 
         Returns:
             List[dict]: The predicted output from the model.
