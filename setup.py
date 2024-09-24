@@ -1,21 +1,7 @@
-"""
-TODO: The current project uses setup.py, but the standard for new projects is pyproject.toml.
-      Consider switching to pyproject.toml in future releases.
-      For more information, refer to:
-      https://packaging.python.org/en/latest/guides/modernize-setup-py-project/#modernize-setup-py-project
-
-Variations:
-
-1. Base Installation:
-   - Command: `python -m pip install nexusml`
-   - Description: Installs the base packages required by the engine.
-                  Use this option if your primary need is to import and use the engine in your code.
-
-2. API Installation:
-   - Command: `python -m pip install nexusml[api]`
-   - Description: Adds all dependencies required by the API to the base engine packages.
-                  Use this option if deploying the API is part of your requirement.
-"""
+# TODO: The current project uses setup.py, but the standard for new projects is pyproject.toml.
+#       Consider switching to pyproject.toml in future releases.
+#       For more information, refer to:
+#       https://packaging.python.org/en/latest/guides/modernize-setup-py-project/#modernize-setup-py-project
 
 import os
 
@@ -35,9 +21,9 @@ if __name__ == '__main__':
     with open('README.md', 'r') as f:
         long_description = f.read()
 
-    # Read base (engine) requirements
+    # Read engine requirements
     with open(os.path.join('requirements', 'engine-requirements.txt')) as f:
-        base_requirements = f.read().splitlines()
+        engine_requirements = f.read().splitlines()
 
     # Read API requirements
     with open(os.path.join('requirements', 'api-requirements.txt')) as f:
@@ -53,13 +39,10 @@ if __name__ == '__main__':
         long_description=long_description,
         long_description_content_type='text/markdown',
         url=_URL,
+        python_requires='>=3.10',
+        install_requires=(engine_requirements + api_requirements),
         packages=find_packages(include=['nexusml*']),
         include_package_data=True,
-        install_requires=base_requirements,
-        extras_require={
-            'api': api_requirements
-        },
-        python_requires='>=3.10',
         package_data={'nexusml': ['api/templates/email_notifications.html',
                                   'api/templates/service_notifications.html',
                                   'api/templates/user_invitation.html',

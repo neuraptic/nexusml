@@ -230,16 +230,10 @@ configure AWS S3 for NexusML:
 
 ## Installation
 
-To install the engine and base components of NexusML, run:
+To install NexusML, run:
 
 ```sh
 python -m pip install nexusml
-```
-
-To install the RESTful API Server, run:
-
-```sh
-python -m pip install nexusml[api]
 ```
 
 Note: The `detectron2` package, required by the engine, might need manual installation. Please refer to the 
