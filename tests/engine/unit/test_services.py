@@ -7,11 +7,11 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from nexusml.api.buffers import ALBuffer
 from nexusml.api.resources.ai import PredictionLog
 from nexusml.database.ai import PredictionDB
 from nexusml.database.core import save_to_db
 from nexusml.database.services import Service
+from nexusml.engine.buffers import ALBuffer
 from nexusml.engine.services.active_learning import ActiveLearningService
 from nexusml.engine.services.continual_learning import ContinualLearningService
 from nexusml.engine.services.monitoring import ClientDB

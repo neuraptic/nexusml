@@ -5,7 +5,7 @@ from datetime import timedelta
 import math
 from typing import Tuple
 
-from nexusml.api.buffers import CLBuffer
+from nexusml.engine.buffers import CLBuffer
 from nexusml.engine.services.base import Service
 from nexusml.enums import ServiceType
 

@@ -24,7 +24,7 @@ from nexusml.enums import ElementValueType
 from nexusml.enums import ServiceType
 
 if TYPE_CHECKING:
-    from nexusml.api.buffers import MonBuffer
+    from nexusml.engine.buffers import MonBuffer
 
 
 class MonitoringService(Service):

@@ -5,9 +5,9 @@ from unittest.mock import MagicMock
 import numpy as np
 import pytest
 
-from nexusml.api.buffers import MonBuffer
 from nexusml.database.organizations import ClientDB
 from nexusml.database.services import Service
+from nexusml.engine.buffers import MonBuffer
 from nexusml.engine.services.monitoring import ElementDB
 from nexusml.engine.services.monitoring import MonitoringService
 from nexusml.engine.services.monitoring import PredictionLog

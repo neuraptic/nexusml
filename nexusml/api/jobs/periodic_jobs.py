@@ -16,7 +16,6 @@ from sqlalchemy import func as sql_func
 from sqlalchemy import or_ as sql_or
 from sqlalchemy import text as sql_text
 
-from nexusml.api.buffers import ALBufferIO
 from nexusml.api.ext import mail
 from nexusml.api.jobs.event_jobs import train
 from nexusml.api.resources.organizations import User
@@ -50,6 +49,7 @@ from nexusml.database.subscriptions import SubscriptionDB
 from nexusml.database.tasks import CategoryDB
 from nexusml.database.tasks import ElementDB
 from nexusml.database.tasks import TaskDB
+from nexusml.engine.buffers import ALBufferIO
 from nexusml.engine.services.active_learning import ActiveLearningService
 from nexusml.engine.services.active_learning import ALBuffer
 from nexusml.engine.services.continual_learning import ContinualLearningService

@@ -3,9 +3,9 @@ from typing import Optional
 
 from celery import shared_task
 
-from nexusml.api.buffers import MonBuffer
 from nexusml.api.utils import get_engine_type
 from nexusml.database.services import Service
+from nexusml.engine.buffers import MonBuffer
 from nexusml.engine.services.monitoring import MonitoringService
 from nexusml.engine.workers import get_engine
 from nexusml.enums import ServiceType

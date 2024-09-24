@@ -5,7 +5,6 @@ from datetime import datetime
 from datetime import timedelta
 from typing import List
 
-from nexusml.api.buffers import ALBuffer
 from nexusml.api.resources.ai import PredictionLog
 from nexusml.api.resources.examples import Comment
 from nexusml.api.resources.examples import Example
@@ -16,6 +15,7 @@ from nexusml.database.ai import PredictionDB
 from nexusml.database.organizations import ClientDB
 from nexusml.database.services import Service as ServiceDB
 from nexusml.database.tasks import ElementDB
+from nexusml.engine.buffers import ALBuffer
 from nexusml.engine.services.base import Service
 from nexusml.enums import ElementValueType
 from nexusml.enums import ServiceType

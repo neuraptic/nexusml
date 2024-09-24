@@ -5,12 +5,12 @@ from abc import abstractmethod
 from datetime import datetime
 from typing import Union
 
-from nexusml.api.buffers import Buffer
 from nexusml.api.resources import InvalidDataError
 from nexusml.api.resources import UnprocessableRequestError
 from nexusml.api.resources.organizations import get_active_subscription
 from nexusml.database.services import Service as ServiceDB
 from nexusml.database.tasks import TaskDB
+from nexusml.engine.buffers import Buffer
 from nexusml.enums import ServiceType
 from nexusml.statuses import Status
 
