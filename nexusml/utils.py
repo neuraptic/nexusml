@@ -5,7 +5,6 @@ import warnings
 
 import boto3
 
-from nexusml.api import config
 from nexusml.enums import ElementValueType
 
 
@@ -59,4 +58,7 @@ def get_s3_config() -> dict:
     Raises:
         KeyError: If the S3 configuration is not found.
     """
+    # TODO: Remove dependency on `nexusml.api`. This is a temporary solution.
+    # Note: We cannot import `nexusml.api.config` at the top of the file because it creates a circular import.
+    from nexusml.api import config
     return config.get('storage')['files']['s3']
