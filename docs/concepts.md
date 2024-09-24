@@ -37,18 +37,6 @@ will only be compatible with the task schema it was trained on.
 An example represents a data point used for training the AI model. It contains the values taken by the data point for 
 all the inputs, outputs, and metadata defined in the task schema.
 
-### Services
-
-A service in NexusML is an abstraction of a job that covers a specific stage of the ML lifecycle within the task.
-
-- *Inference Service*: Deploys and serves AI models in production environments.
-- *Testing Service*: Deploys and serves AI models in testing environments. It is useful to evaluate the performance of 
-  AI models before deploying them in production.
-- *Continual Learning Service*: Updates and retrains AI models with new data.
-- *Active Learning Service*: Proactively selects the most informative data samples encountered in production for 
-  human labeling.
-- *Monitoring Service*: Detects anomalies in the AI model behavior.
-
 ### Prediction Logs
 
 Prediction logs are records of the predictions made by the Inference Service and the Testing Service.

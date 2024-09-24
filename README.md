@@ -24,6 +24,8 @@ will streamline and simplify the integration between the engine and the main API
 ## Additional Documentation
 
 The [docs](docs) directory contains additional documentation:
+
+- [architecture.md](docs/architecture.md): Describes the architecture of NexusML.
 - [concepts.md](docs/concepts.md): Describes the concepts used in NexusML.
 - [quickstart.md](docs/quickstart.md): Provides a quick start guide for NexusML.
 - [states-and-statuses.md](docs/states-and-statuses.md): Describes NexusML's states and statuses.
