@@ -11,7 +11,8 @@ overview of NexusML and its key features and concepts.
 ## Requirements
 
 - Python 3.10
-- AWS setup (S3 bucket and credentials) if you want to use S3 as the file storage backend.
+- [Auth0](https://auth0.com/) configuration for user authentication
+- [AWS S3](https://aws.amazon.com/s3/) configuration if you want to use S3 as the file storage backend
 
 ## Pending Refactor Note
 
@@ -26,6 +27,7 @@ will streamline and simplify the integration between the engine and the main API
 The [docs](docs) directory contains additional documentation:
 
 - [architecture.md](docs/architecture.md): Describes the architecture of NexusML.
+- [auth0.md](docs/auth0.md): Describes the Auth0 configuration for NexusML.
 - [concepts.md](docs/concepts.md): Describes the concepts used in NexusML.
 - [quickstart.md](docs/quickstart.md): Provides a quick start guide for NexusML.
 - [states-and-statuses.md](docs/states-and-statuses.md): Describes NexusML's states and statuses.
