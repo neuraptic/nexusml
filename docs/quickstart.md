@@ -191,15 +191,8 @@ and [JWT](https://jwt.io/) documentation.
 
 ### Auth0 (Optional)
 
-<div style="text-align: left;">
-  <div style="border: 1px solid #f5c6cb; padding: 10px 10px; background-color: rgba(248, 215, 218, 0.5); color: #721c24; display: flex; align-items: flex-start;">
-    <span style="margin-right: 10px;">⚠️</span>
-    <div>
-      While Auth0 is optional when running NexusML in single-tenant, single-client mode, it is highly recommended to set up Auth0 in production environments for security reasons.
-    </div>
-  </div>
-  <p></p>
-</div>
+> ⚠️ **Warning:** While Auth0 is optional when running NexusML in single-tenant, single-client mode, it is highly 
+> recommended to set up Auth0 in production environments for security reasons.
 
 NexusML uses [Auth0](https://auth0.com/) for authentication, ensuring secure login and access management. To set up 
 Auth0 for NexusML, please refer to the instructions in [auth0.md](auth0.md). After setting up Auth0, you will need to 
@@ -281,12 +274,7 @@ API key allows you to access the API without authentication, avoiding the need t
 API key, either copy the message shown by the `nexusml-server` command at startup or open the `default_api_key.txt` 
 file located in the `nexusml` package directory.
 
-<div style="text-align: left;">
-  <div style="border: 1px solid #f5c6cb; padding: 10px 10px; background-color: rgba(248, 215, 218, 0.5); color: #721c24;">
-    ⚠️ Make sure that the default API key is not enabled in production
-  </div>
-  <p></p>
-</div>
+> ⚠️ **Warning:** Make sure that the default API key is not enabled in production.
 
 It is important to make sure that the default API key is not enabled in production. To disable the default API key, 
 update the following line in the `config.yaml` file located in the `nexusml` package directory:
