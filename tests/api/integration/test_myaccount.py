@@ -1,6 +1,5 @@
 from datetime import datetime
 from datetime import timedelta
-import os
 from typing import Iterable, Union
 
 import pytest
@@ -38,7 +37,6 @@ from nexusml.enums import NotificationEvent
 from nexusml.enums import NotificationSource
 from nexusml.enums import ResourceAction
 from nexusml.enums import ResourceType
-from tests.api.env import ENV_SESSION_USER_UUID
 from tests.api.integration.conftest import MockClient
 from tests.api.integration.test_organizations import _get_role_json
 from tests.api.integration.utils import get_endpoint
@@ -51,15 +49,15 @@ pytestmark = [pytest.mark.integration, pytest.mark.slow]
 
 class TestMyAccount:
 
-    def test_delete_last_admin(self, client: MockClient):
+    def test_delete_last_admin(self, client: MockClient, session_user_id: str):
         endpoint_url = get_endpoint(parameterized_endpoint=ENDPOINT_MYACCOUNT)
         response = client.send_request(method='DELETE', url=endpoint_url)
         assert response.status_code == HTTP_UNPROCESSABLE_ENTITY_STATUS_CODE
         assert response.json()['error']['message'] == 'There must be at least one admin user'
         db_commit_and_expire()
-        assert UserDB.get_from_uuid(os.environ[ENV_SESSION_USER_UUID]) is not None
+        assert UserDB.get_from_uuid(session_user_id) is not None
 
-    def test_delete(self, mock_request_responses, mocker, client: MockClient):
+    def test_delete(self, mock_request_responses, mocker, client: MockClient, session_user_id: str):
         endpoint_url = get_endpoint(parameterized_endpoint=ENDPOINT_MYACCOUNT)
         mocker.patch('nexusml.api.resources.organizations.get_user_roles', return_value=['not_admin'])
 
@@ -67,13 +65,13 @@ class TestMyAccount:
 
         assert response.status_code == HTTP_DELETE_STATUS_CODE
         db_commit_and_expire()
-        assert UserDB.get_from_uuid(os.environ[ENV_SESSION_USER_UUID]) is None
+        assert UserDB.get_from_uuid(session_user_id) is None
 
-    def test_get(self, mock_request_responses, client: MockClient):
+    def test_get(self, mock_request_responses, client: MockClient, session_user_id: str):
         endpoint_url = get_endpoint(parameterized_endpoint=ENDPOINT_MYACCOUNT)
         response = client.send_request(method='GET', url=endpoint_url)
         assert response.status_code == HTTP_GET_STATUS_CODE
-        user = UserDB.get_from_uuid(os.environ[ENV_SESSION_USER_UUID])
+        user = UserDB.get_from_uuid(session_user_id)
         user_auth0_data = {
             'email': 'test@testorg.com',
             'first_name': 'Test',
@@ -231,19 +229,19 @@ class TestNotification:
 
 class TestOrganization:
 
-    def test_get(self, client: MockClient):
+    def test_get(self, client: MockClient, session_user_id: str):
         endpoint_url = get_endpoint(parameterized_endpoint=ENDPOINT_MYACCOUNT_ORGANIZATION)
         response = client.send_request(method='GET', url=endpoint_url)
         assert response.status_code == HTTP_GET_STATUS_CODE
-        user = UserDB.get_from_uuid(os.environ[ENV_SESSION_USER_UUID])
+        user = UserDB.get_from_uuid(session_user_id)
         expected_json = get_json_from_db_object(db_object=user.organization)
         assert response.json() == expected_json
 
 
 class TestRoles:
 
-    def test_get(self, client: MockClient):
-        user = UserDB.query().filter_by(uuid=os.environ[ENV_SESSION_USER_UUID]).first()
+    def test_get(self, client: MockClient, session_user_id: str):
+        user = UserDB.query().filter_by(uuid=session_user_id).first()
         # Make request
         endpoint_url = get_endpoint(parameterized_endpoint=ENDPOINT_MYACCOUNT_ROLES)
         response = client.send_request(method='GET', url=endpoint_url)
@@ -255,9 +253,9 @@ class TestRoles:
 
 class TestPermissions:
 
-    def test_get(self, client: MockClient):
+    def test_get(self, client: MockClient, session_user_id: str):
         # Set user/role permissions
-        user = UserDB.get_from_uuid(os.environ[ENV_SESSION_USER_UUID])
+        user = UserDB.get_from_uuid(session_user_id)
         user.permissions.delete()
         same_org_task = TaskDB.query().filter(TaskDB.organization_id == user.organization_id).first()
         other_org_task = TaskDB.query().filter(TaskDB.organization_id != user.organization_id).first()

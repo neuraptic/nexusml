@@ -473,7 +473,7 @@ class OrganizationsView(_OrganizationsView):
             organization = OrganizationsView._set_organization(
                 user_auth0_id=g.user_auth0_id,
                 org_db_object=org_db_object,
-                copy_demo_tasks=config.get('general')['enable_demo_tasks'])
+                copy_demo_tasks=config.get('general')['demo_tasks_enabled'])
         except Exception as e:
             delete_from_db(org_db_object)
             raise e

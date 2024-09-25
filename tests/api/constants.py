@@ -48,7 +48,8 @@ TEST_CONFIG = {
         },
     },
     'general': {
-        'enable_demo_tasks': True
+        'demo_tasks_enabled': True,
+        'default_api_key_enabled': False
     },
     'jobs': {
         'abort_upload_after': 7,

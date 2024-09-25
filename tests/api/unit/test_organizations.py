@@ -5,18 +5,17 @@ import pytest
 from nexusml.api.resources import DuplicateResourceError
 from nexusml.api.views.organizations import UserDB
 from nexusml.api.views.organizations import UserInviteView
+from nexusml.env import ENV_AUTH0_DOMAIN
+
+
+@pytest.fixture(scope='function', autouse=True)
+def mock_env(monkeypatch):
+    monkeypatch.setenv(ENV_AUTH0_DOMAIN, 'test_domain')
 
 
 class TestUserInviteView:
 
-    @pytest.fixture
-    def mock_env(self, monkeypatch):
-        monkeypatch.setenv('ENV_auth0_DOMAIN', 'mock_domain')
-        monkeypatch.setenv('ENV_auth0_CONNECTION_ID', 'mock_connection_id')
-        monkeypatch.setenv('auth0_DOMAIN', 'mock_domain')
-        monkeypatch.setenv('auth0_CONNECTION_ID', 'mock_connection_id')
-
-    def test_post(self, app, client, mocker, mock_env):
+    def test_post(self, app, client, mocker):
         """
         Test the POST request handling in UserInviteView.
 

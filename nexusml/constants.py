@@ -229,6 +229,7 @@ HTTP_SERVICE_UNAVAILABLE = 503
 ########
 
 CONFIG_FILE = 'config.yaml'
+DEFAULT_API_KEY_FILE = 'default_api_key.txt'
 
 UUID_VERSION = 4
 NULL_UUID = '00000000-0000-0000-0000-000000000000'
@@ -247,5 +248,8 @@ CL_SERVICE_NAME = 'cl_service'  # continual learning
 AL_SERVICE_NAME = 'al_service'  # active learning
 MONITORING_SERVICE_NAME = 'monitoring_service'
 TESTING_SERVICE_NAME = 'testing_service'
+
+DEFAULT_CELERY_BROKER_URL = 'redis://localhost:6379/0'
+DEFAULT_CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
 
 THUMBNAIL_SIZE = (128, 128)

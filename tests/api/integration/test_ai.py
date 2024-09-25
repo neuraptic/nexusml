@@ -580,14 +580,22 @@ class TestPredictionLogs:
 class TestPredictionLog:
 
     @pytest.mark.parametrize('file_storage_backend', [FileStorageBackend.LOCAL, FileStorageBackend.S3])
-    def test_delete(self, client: MockClient, mock_s3, file_storage_backend: FileStorageBackend):
+    def test_delete(self,
+                    client: MockClient,
+                    mock_s3,
+                    file_storage_backend: FileStorageBackend,
+                    mock_client_id: str,
+                    session_user_id: str,
+                    session_user_auth0_id: str):
         # Valid request (testing prediction)
         verify_example_or_prediction_deletion(client=client,
                                               resource_type=PredictionLog,
                                               file_storage_backend=file_storage_backend)
 
         # Invalid request (prediction made in production)
-        restore_db()
+        restore_db(mock_client_id=mock_client_id,
+                   session_user_id=session_user_id,
+                   session_user_auth0_id=session_user_auth0_id)
 
         prediction_log = load_default_resource(resource_type=PredictionLog, parents_types=[Task])
         prediction_log.db_object().environment = AIEnvironment.PRODUCTION
@@ -620,7 +628,12 @@ class TestPredictionLog:
 
 class TestPredictionLogging:
 
-    def test_post(self, backend: Backend, client: MockClient):
+    def test_post(self,
+                  backend: Backend,
+                  client: MockClient,
+                  mock_client_id: str,
+                  session_user_id: str,
+                  session_user_auth0_id: str):
         """
         Since prediction logging is asynchronous (Celery task), we cannot check responses as we do for examples.
         Instead, we test `nexusml.resources.ai.PredictionLog.post_batch()` function.
@@ -628,7 +641,9 @@ class TestPredictionLogging:
 
         def _set_request() -> Tuple[Task, dict, dict]:
             # Restore database
-            restore_db()
+            restore_db(mock_client_id=mock_client_id,
+                       session_user_id=session_user_id,
+                       session_user_auth0_id=session_user_auth0_id)
             empty_table(PredictionDB)
             # Get task
             task: Task = load_default_resource(resource_type=Task)

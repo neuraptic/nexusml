@@ -42,8 +42,7 @@ from nexusml.database.organizations import UserDB
 from nexusml.database.tasks import TaskDB
 from nexusml.enums import NotificationEvent
 from nexusml.enums import NotificationSource
-from tests.api.env import ENV_NOTIFICATION_EMAIL
-from tests.api.env import ENV_SESSION_USER_UUID
+from nexusml.env import ENV_NOTIFICATION_EMAIL
 from tests.api.integration.utils import get_endpoint
 from tests.api.integration.utils import mock_element_values_json
 from tests.api.integration.utils import send_request
@@ -53,7 +52,7 @@ from tests.api.utils import load_default_resource
 
 pytestmark = [pytest.mark.integration, pytest.mark.slow]
 
-_CLIENT_ID = NUM_RESERVED_CLIENTS + 1  # first client IDs are reserved for official apps
+_CLIENT_ID = NUM_RESERVED_CLIENTS + 2  # First client IDs are reserved for official apps
 
 
 class TestAPIKey:
@@ -106,7 +105,7 @@ class TestAPIKey:
         verify_response_examples_or_prediction_logs(actual_jsons=[response.json()],
                                                     expected_db_objects=[example.db_object()])
 
-    def test_unsupported_endpoints(self):
+    def test_unsupported_endpoints(self, session_user_id: str):
 
         def _test_method(method: str, url: str, api_key: str, json: dict = None):
             response = send_request(method=method, url=url, api_key=api_key, json=json)
@@ -175,7 +174,7 @@ class TestAPIKey:
 
         # POST /organizations
         orgs_url = api_url + ENDPOINT_ORGANIZATIONS
-        session_user = UserDB.get_from_uuid(os.environ[ENV_SESSION_USER_UUID])
+        session_user = UserDB.get_from_uuid(session_user_id)
         delete_from_db(session_user)
         new_org = {'trn': 'test_trn', 'name': 'test_name', 'domain': 'org2.com', 'address': 'test_address'}
         _test_method(method='POST', url=orgs_url, api_key=api_key, json=new_org)

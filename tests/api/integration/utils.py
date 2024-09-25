@@ -119,7 +119,12 @@ def get_endpoint(parameterized_endpoint: str,
     return (API_DOMAIN + api_url + endpoint) if absolute_url else endpoint
 
 
-def verify_endpoints_protection(client: MockClient, endpoint: str, view: MethodResource):
+def verify_endpoints_protection(client: MockClient,
+                                endpoint: str,
+                                view: MethodResource,
+                                mock_client_id: str,
+                                session_user_id: str,
+                                session_user_auth0_id: str):
     """ Class decorator for verifying all endpoints' access protection before making the corresponding requests. """
 
     # TODO: this decorator makes tests extremely slow and doesn't scale at all
@@ -283,7 +288,9 @@ def verify_endpoints_protection(client: MockClient, endpoint: str, view: MethodR
             @functools.wraps(func)
             def wrapper(*args, **kwargs):
                 # Restore database
-                restore_db()
+                restore_db(mock_client_id=mock_client_id,
+                           session_user_id=session_user_id,
+                           session_user_auth0_id=session_user_auth0_id)
                 if endpoint.endswith('>'):
                     resource = load_default_resource(resource_type=view.resource_types[-1],
                                                      parents_types=view.resource_types[:-1])
@@ -295,7 +302,9 @@ def verify_endpoints_protection(client: MockClient, endpoint: str, view: MethodR
                                             payload=kwargs.get('json'),
                                             resource=resource)
                 # Restore database
-                restore_db()
+                restore_db(mock_client_id=mock_client_id,
+                           session_user_id=session_user_id,
+                           session_user_auth0_id=session_user_auth0_id)
                 # Run wrapped function
                 return func(*args, **kwargs)
 

@@ -54,7 +54,7 @@ from nexusml.database.core import db_query
 from nexusml.database.core import save_to_db
 from nexusml.database.organizations import Agent
 from nexusml.database.organizations import ClientDB
-from nexusml.database.organizations import known_client_uuids
+from nexusml.database.organizations import KNOWN_CLIENT_UUIDS
 from nexusml.database.organizations import user_roles
 from nexusml.database.organizations import UserDB
 from nexusml.database.permissions import RolePermission
@@ -460,7 +460,7 @@ class TaskStatusView(_TaskView):
 
     @use_kwargs(StatusRequestSchema, location='json')
     @marshal_with(StatusResponseSchema)
-    @allowed_clients(client_ids=[known_client_uuids['Web']],
+    @allowed_clients(client_ids=[KNOWN_CLIENT_UUIDS['web']],
                      service_types=ServiceType,
                      error_code=HTTP_NOT_FOUND_STATUS_CODE)
     def put(self, task_id: str, resources: List[Resource], **kwargs) -> Response:

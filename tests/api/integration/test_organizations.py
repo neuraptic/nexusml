@@ -1,6 +1,5 @@
 from datetime import datetime
 from datetime import timedelta
-import os
 import re
 from typing import List, Tuple, Union
 
@@ -72,7 +71,6 @@ from nexusml.enums import ResourceAction
 from nexusml.enums import ResourceType
 from tests.api.conftest import restore_db
 from tests.api.constants import BACKEND_JSON_FIELDS
-from tests.api.env import ENV_SESSION_USER_AUTH0_ID
 from tests.api.integration.conftest import MockClient
 from tests.api.integration.utils import get_endpoint
 from tests.api.integration.utils import verify_resource_request
@@ -88,17 +86,22 @@ pytestmark = [pytest.mark.integration, pytest.mark.slow]
 
 _ORG_ID = 2  # 1 is reserved for the main organization
 _USER_ID = 2  # 1 is session user in tests
-_CLIENT_ID = NUM_RESERVED_CLIENTS + 1  # first client IDs are reserved for official apps
+_CLIENT_ID = NUM_RESERVED_CLIENTS + 2  # First client IDs are reserved for official apps
 
 
 class TestOrganizations:
 
-    def test_post(self, mock_request_responses, client: MockClient):
+    def test_post(self,
+                  mock_request_responses,
+                  client: MockClient,
+                  mock_client_id: str,
+                  session_user_id: str,
+                  session_user_auth0_id: str):
         """
         Valid request
         """
         # Delete session user from database to be able to create a new organization
-        session_user = UserDB.query().filter_by(auth0_id=os.environ[ENV_SESSION_USER_AUTH0_ID]).first()
+        session_user = UserDB.query().filter_by(auth0_id=session_user_auth0_id).first()
         delete_from_db(session_user)
 
         # Make request and verify response
@@ -113,7 +116,7 @@ class TestOrganizations:
 
         # Check database
         db_commit_and_expire()
-        session_user = UserDB.query().filter_by(auth0_id=os.environ[ENV_SESSION_USER_AUTH0_ID]).first()
+        session_user = UserDB.query().filter_by(auth0_id=session_user_auth0_id).first()
         assert session_user is not None
         user_roles = db_query(user_roles_table).filter(user_roles_table.c.user_id == session_user.user_id).all()
         assert len(user_roles) == 1  # the user creating the organization becomes the admin
@@ -159,8 +162,8 @@ class TestOrganizations:
         #################
         # Duplicate TRN #
         #################
-        delete_from_db(UserDB.query().filter_by(auth0_id=os.environ[ENV_SESSION_USER_AUTH0_ID]).first())
-        assert UserDB.query().filter_by(auth0_id=os.environ[ENV_SESSION_USER_AUTH0_ID]).first() is None
+        delete_from_db(UserDB.query().filter_by(auth0_id=session_user_auth0_id).first())
+        assert UserDB.query().filter_by(auth0_id=session_user_auth0_id).first() is None
         duplicate_trn = 'org_2_trn'
         assert OrganizationDB.get_from_id(id_value=duplicate_trn) is not None
         invalid_org_data = {
@@ -178,7 +181,7 @@ class TestOrganizations:
         # Domain mismatch (user's and organization's) #
         ###############################################
         org_trn = 'test_trn_2'
-        assert UserDB.query().filter_by(auth0_id=os.environ[ENV_SESSION_USER_AUTH0_ID]).first() is None
+        assert UserDB.query().filter_by(auth0_id=session_user_auth0_id).first() is None
         invalid_org_data = {
             'trn': org_trn,
             'name': 'test_name_2',
@@ -195,7 +198,9 @@ class TestOrganizations:
         #####################################################
         # Try to exceed the maximum number of organizations #
         #####################################################
-        restore_db()
+        restore_db(mock_client_id=mock_client_id,
+                   session_user_id=session_user_id,
+                   session_user_auth0_id=session_user_auth0_id)
 
         init_waitlist = WaitList.query().all()
         oldest_waitlist_entry = WaitList.query().order_by(WaitList.id_).first()
@@ -254,7 +259,12 @@ class TestOrganization:
                                        expected_jsons=expected_jsons,
                                        expected_status_code=expected_status_code)
 
-    def test_delete(self, client: MockClient, mock_s3):
+    def test_delete(self,
+                    client: MockClient,
+                    mock_s3,
+                    mock_client_id: str,
+                    session_user_id: str,
+                    session_user_auth0_id: str):
         """
         Valid request
         """
@@ -262,7 +272,9 @@ class TestOrganization:
         ###################################################################
         # Invalid request: try to delete the Organization as a Maintainer #
         ###################################################################
-        restore_db()
+        restore_db(mock_client_id=mock_client_id,
+                   session_user_id=session_user_id,
+                   session_user_auth0_id=session_user_auth0_id)
         cache.clear()
         session_user = get_user(user_id=1)
         maintainer_role = RoleDB.get_from_id(id_value=MAINTAINER_ROLE, parent=session_user.db_object().organization)
@@ -273,7 +285,12 @@ class TestOrganization:
     def test_get(self, client: MockClient, mock_s3):
         self._test_org_method(client=client, method='GET')
 
-    def test_put(self, client: MockClient, mock_s3):
+    def test_put(self,
+                 client: MockClient,
+                 mock_s3,
+                 mock_client_id: str,
+                 session_user_id: str,
+                 session_user_auth0_id: str):
         #################
         # Valid request #
         #################
@@ -298,7 +315,9 @@ class TestOrganization:
         ###############################################
         # Invalid request: try to use an existing TRN #
         ###############################################
-        restore_db()
+        restore_db(mock_client_id=mock_client_id,
+                   session_user_id=session_user_id,
+                   session_user_auth0_id=session_user_auth0_id)
         org_data = {'trn': 'org_3_trn', 'name': 'modified_name', 'address': 'modified_address'}
         response = self._test_org_method(client=client,
                                          method='PUT',
@@ -308,7 +327,9 @@ class TestOrganization:
         #########################################
         # Invalid request: try to modify domain #
         #########################################
-        restore_db()
+        restore_db(mock_client_id=mock_client_id,
+                   session_user_id=session_user_id,
+                   session_user_auth0_id=session_user_auth0_id)
         org_data = {
             'trn': 'modified_trn',
             'name': 'modified_name',
@@ -322,7 +343,9 @@ class TestOrganization:
         ###################################################################
         # Invalid request: try to modify the Organization as a Maintainer #
         ###################################################################
-        restore_db()
+        restore_db(mock_client_id=mock_client_id,
+                   session_user_id=session_user_id,
+                   session_user_auth0_id=session_user_auth0_id)
         cache.clear()
         session_user = get_user(user_id=1)
         maintainer_role = RoleDB.get_from_id(id_value=MAINTAINER_ROLE, parent=session_user.db_object().organization)
@@ -426,14 +449,16 @@ class TestUsers:
 
 class TestUser:
 
-    def test_delete(self, client: MockClient):
+    def test_delete(self, client: MockClient, mock_client_id: str, session_user_id: str, session_user_auth0_id: str):
 
         def _test_delete(user_roles: List[str],
                          session_user_roles: List[str],
                          expected_code: int,
                          expected_msg: str = None):
             # Restore database and cache
-            restore_db()
+            restore_db(mock_client_id=mock_client_id,
+                       session_user_id=session_user_id,
+                       session_user_auth0_id=session_user_auth0_id)
             cache.clear()
 
             # Assign roles to target user and session user
@@ -741,7 +766,7 @@ class TestRole:
         assert response.status_code == HTTP_GET_STATUS_CODE
         verify_response_json(actual_json=response.json(), expected_json=_get_role_json(db_object=role.db_object()))
 
-    def test_put(self, client: MockClient):
+    def test_put(self, client: MockClient, mock_client_id: str, session_user_id: str, session_user_auth0_id: str):
         # Valid request
         role = get_role(organization_id=_ORG_ID, name='dasci')
         modified_role = {'name': 'Modified Test Role', 'description': 'Modified test role description'}
@@ -756,7 +781,9 @@ class TestRole:
                              optional_fields=optional_fields)
 
         # Try to modify predefined roles (not allowed)
-        restore_db()
+        restore_db(mock_client_id=mock_client_id,
+                   session_user_id=session_user_id,
+                   session_user_auth0_id=session_user_auth0_id)
         predefined_roles = [ADMIN_ROLE, MAINTAINER_ROLE]
         for role_name in predefined_roles:
             role = get_role(organization_id=_ORG_ID, name=role_name)

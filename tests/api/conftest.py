@@ -54,9 +54,9 @@ from nexusml.database.notifications import AggregatedNotificationDB
 from nexusml.database.notifications import NotificationDB
 from nexusml.database.organizations import ClientDB
 from nexusml.database.organizations import CollaboratorDB
+from nexusml.database.organizations import create_default_admin_and_maintainer_roles
+from nexusml.database.organizations import create_default_organization
 from nexusml.database.organizations import create_known_clients_and_reserved_clients
-from nexusml.database.organizations import create_main_admin_and_maintainer
-from nexusml.database.organizations import create_main_organization
 from nexusml.database.organizations import InvitationDB
 from nexusml.database.organizations import OrganizationDB
 from nexusml.database.organizations import RoleDB
@@ -95,9 +95,6 @@ from nexusml.env import ENV_DB_PASSWORD
 from nexusml.env import ENV_DB_USER
 from nexusml.utils import FILE_TYPES
 from tests.api.constants import TEST_CONFIG
-from tests.api.env import ENV_MOCK_CLIENT_ID
-from tests.api.env import ENV_SESSION_USER_AUTH0_ID
-from tests.api.env import ENV_SESSION_USER_UUID
 
 ###############
 # Basic stuff #
@@ -117,7 +114,7 @@ def api_config(tests_dir) -> dict:
 def api_domain(monkeypatch) -> str:
     _api_domain = 'http://' + os.environ[ENV_API_DOMAIN]
 
-    monkeypatch.setenv(os.environ[ENV_API_DOMAIN], _api_domain)
+    monkeypatch.setenv(ENV_API_DOMAIN, _api_domain)
 
     monkeypatch.setattr('nexusml.api.resources.base.API_DOMAIN', _api_domain)
     monkeypatch.setattr('nexusml.api.resources.files.API_DOMAIN', _api_domain)
@@ -143,6 +140,21 @@ def api_artifacts_dir(artifacts_dir) -> str:
     shutil.rmtree(api_artifacts_path)
 
 
+@pytest.fixture(scope='session', autouse=True)
+def mock_client_id() -> str:
+    return str(uuid.uuid4())
+
+
+@pytest.fixture(scope='session', autouse=True)
+def session_user_id() -> str:
+    return str(uuid.uuid4())
+
+
+@pytest.fixture(scope='session', autouse=True)
+def session_user_auth0_id() -> str:
+    return str(uuid.uuid4())
+
+
 #######
 # App #
 #######
@@ -159,7 +171,8 @@ def set_app_config(app: Flask):
 
         for param, value in _db_connection.items():
             if value not in os.environ:
-                print(f'FATAL: environment variable "{value}" has not been set. Exiting')
+                print(f'ERROR: Environment variable "{value}" has not been set')
+                print('Exiting')
                 sys.exit(1)
             else:
                 template_db_uri = template_db_uri.replace(param, os.environ[value])
@@ -179,7 +192,7 @@ def set_app_config(app: Flask):
 ############
 
 
-def populate_db():
+def populate_db(mock_client_id: str, session_user_id: str, session_user_auth0_id: str):
     # TODO: Do we really need to populate so many tables?
     # TODO: Decompose this function into multiple functions. It's too long.
 
@@ -377,7 +390,7 @@ def populate_db():
     # Note: `organization_id=1` is reserved for the main organization #
     ###################################################################
     empty_table(OrganizationDB)
-    create_main_organization()
+    create_default_organization()
     organization_2 = OrganizationDB(organization_id=2,
                                     trn='org_2_trn',
                                     name='Organization 2',
@@ -449,8 +462,8 @@ def populate_db():
     empty_table(UserDB)
 
     # Create users
-    user_uuids = [os.environ[ENV_SESSION_USER_UUID]] + [str(uuid.uuid4()) for _ in range(7)]
-    user_auth0_ids = ([os.environ[ENV_SESSION_USER_AUTH0_ID]] +
+    user_uuids = [session_user_id] + [str(uuid.uuid4()) for _ in range(7)]
+    user_auth0_ids = ([session_user_auth0_id] +
                       [f'auth0|{111111111111111111111111 + (111111111111111111111111 * i)}' for i in range(1, 8)])
     users = [
         UserDB(user_id=(idx + 1),
@@ -462,14 +475,14 @@ def populate_db():
 
     # Set default user
     user = UserDB.get(user_id=1)
-    assert user.uuid == os.environ[ENV_SESSION_USER_UUID]
+    assert user.uuid == session_user_id
 
     #########
     # Roles #
     #########
     # Empty tables
     empty_table(RoleDB)
-    create_main_admin_and_maintainer()
+    create_default_admin_and_maintainer_roles()
 
     # Create roles
     admin_role = RoleDB(organization_id=2, name=ADMIN_ROLE, description='Test Admin Role')
@@ -502,9 +515,9 @@ def populate_db():
     create_known_clients_and_reserved_clients()
 
     # Create mock client
-    mock_client = ClientDB(client_id=(NUM_RESERVED_CLIENTS + 1),
+    mock_client = ClientDB(client_id=(NUM_RESERVED_CLIENTS + 2),
                            organization_id=2,
-                           uuid=os.environ[ENV_MOCK_CLIENT_ID],
+                           uuid=mock_client_id,
                            name='Mock Client (Organization 2)')
 
     clients = [
@@ -512,7 +525,7 @@ def populate_db():
                  organization_id=2 if idx % 2 == 1 else 3,
                  name=f'Client {idx}',
                  description=f'Description {idx}')
-        for idx in range((NUM_RESERVED_CLIENTS + 2), (NUM_RESERVED_CLIENTS + 11))
+        for idx in range((NUM_RESERVED_CLIENTS + 3), (NUM_RESERVED_CLIENTS + 12))
     ]
 
     clients.insert(0, mock_client)
@@ -1203,10 +1216,12 @@ def populate_db():
     save_to_db(entries)
 
 
-def restore_db():
+def restore_db(mock_client_id: str, session_user_id: str, session_user_auth0_id: str):
     db_rollback()
     db.session.expire_all()
-    populate_db()
+    populate_db(mock_client_id=mock_client_id,
+                session_user_id=session_user_id,
+                session_user_auth0_id=session_user_auth0_id)
 
 
 def empty_db(app: Flask):

@@ -30,6 +30,7 @@ torch
 torchaudio
 torchsummary
 torchvision
+torch_cluster
 torch_geometric
 tqdm
 transformers

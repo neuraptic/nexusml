@@ -45,7 +45,7 @@ from nexusml.database.files import OrgFileDB as FileDB
 from nexusml.database.organizations import Agent
 from nexusml.database.organizations import ClientDB
 from nexusml.database.organizations import CollaboratorDB
-from nexusml.database.organizations import known_client_ids
+from nexusml.database.organizations import KNOWN_CLIENT_IDS
 from nexusml.database.organizations import OrganizationDB
 from nexusml.database.organizations import RoleDB
 from nexusml.database.organizations import user_roles as user_roles_table
@@ -521,7 +521,7 @@ class Client(Resource):
             PermissionDeniedError: If the client is a default application or service.
         """
         is_service = Service.query().filter_by(client_id=self.db_object().client_id).first() is not None
-        if is_service or self.db_object().client_id in known_client_ids.values():
+        if is_service or self.db_object().client_id in KNOWN_CLIENT_IDS.values():
             raise PermissionDeniedError(f'Default {API_NAME} applications and services cannot be deleted')
         super().delete(notify_to=notify_to)
 
@@ -605,7 +605,7 @@ class Client(Resource):
             PermissionDeniedError: If the client is a default application or service.
         """
         is_service = Service.query().filter_by(client_id=self.db_object().client_id).first() is not None
-        if is_service or self.db_object().client_id in known_client_ids.values():
+        if is_service or self.db_object().client_id in KNOWN_CLIENT_IDS.values():
             raise PermissionDeniedError(f'Default {API_NAME} applications and services cannot be modified')
         super().put(data=data, notify_to=notify_to)
 

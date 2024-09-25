@@ -28,6 +28,7 @@ from nexusml.api.utils import config
 from nexusml.constants import ADMIN_ROLE
 from nexusml.constants import API_NAME
 from nexusml.constants import API_VERSION
+from nexusml.constants import DEFAULT_API_KEY_FILE
 from nexusml.constants import MAINTAINER_ROLE
 from nexusml.constants import NUM_RESERVED_CLIENTS
 from nexusml.database.base import BinaryUUID
@@ -38,10 +39,6 @@ from nexusml.database.core import db_commit
 from nexusml.database.core import db_rollback
 from nexusml.database.core import save_to_db
 from nexusml.enums import InviteStatus
-from nexusml.env import ENV_MAIN_ORG_ADDRESS
-from nexusml.env import ENV_MAIN_ORG_DOMAIN
-from nexusml.env import ENV_MAIN_ORG_NAME
-from nexusml.env import ENV_MAIN_ORG_TRN
 from nexusml.env import ENV_WEB_CLIENT_ID
 
 #################
@@ -179,6 +176,7 @@ user_roles = Table('user_roles',
                           nullable=False),
                    mysql_engine='InnoDB')
 
+
 ###########
 # Clients #
 ###########
@@ -286,6 +284,7 @@ client_scopes = sorted([
     'predictions.read',
     'predictions.delete'
 ])
+
 
 ##############################################
 # Entities created/modified by users/clients #
@@ -445,30 +444,20 @@ class WaitList(DBModel):
 #########################
 
 
-def create_main_organization():
-    MAIN_ORG_TRN = os.environ[ENV_MAIN_ORG_TRN]
-    MAIN_ORG_NAME = os.environ[ENV_MAIN_ORG_NAME]
-    MAIN_ORG_DOMAIN = os.environ[ENV_MAIN_ORG_DOMAIN]
-    MAIN_ORG_ADDRESS = os.environ[ENV_MAIN_ORG_ADDRESS]
-
-    main_org = OrganizationDB.get(organization_id=1)
-    if main_org is None:
-        main_org = OrganizationDB(organization_id=1,
-                                  trn=MAIN_ORG_TRN,
-                                  name=MAIN_ORG_NAME,
-                                  domain=MAIN_ORG_DOMAIN,
-                                  address=MAIN_ORG_ADDRESS)
-        save_to_db(main_org)
-    else:
-        assert main_org.trn == MAIN_ORG_TRN
-        assert main_org.name == MAIN_ORG_NAME
-        assert main_org.domain == MAIN_ORG_DOMAIN
-        assert main_org.address == MAIN_ORG_ADDRESS
+def create_default_organization():
+    default_org = OrganizationDB.get(organization_id=1)
+    if default_org is None:
+        default_org = OrganizationDB(organization_id=1,
+                                     trn='',
+                                     name='NexusML',
+                                     domain='',
+                                     address='')
+        save_to_db(default_org)
 
 
-def create_main_admin_and_maintainer():
+def create_default_admin_and_maintainer_roles():
     """
-    Create main roles
+    Create default roles
     """
 
     roles = [
@@ -491,17 +480,17 @@ def create_main_admin_and_maintainer():
     assert maintainer.organization_id == 1
 
 
-known_client_ids = {
-    'Web': 1,
+KNOWN_CLIENT_IDS = {
+    'default': 1,
+    'web': 2,
 }
 
-known_client_uuids = {
-    'Web': os.environ[ENV_WEB_CLIENT_ID],
+KNOWN_CLIENT_UUIDS = {
+    'web': os.environ[ENV_WEB_CLIENT_ID],
 }
 
 
 def create_known_clients_and_reserved_clients():
-
     def _save_if_not_exist(db_object: DBModel) -> bool:
         try:
             save_to_db(db_object)
@@ -512,20 +501,34 @@ def create_known_clients_and_reserved_clients():
             db_rollback()
             return False
 
-    # NexusML Web App
-    web_app = ClientDB(client_id=known_client_ids['Web'],
+    # Create the default client for testing purposes
+    default_client = ClientDB(client_id=KNOWN_CLIENT_IDS['default'],
+                              organization_id=1,
+                              name='Default Client',
+                              description='Default client for testing purposes')
+    _save_if_not_exist(default_client)
+
+    # Save the default client's API key to a file for later use
+    if config.get('general')['default_api_key_enabled']:
+        if not os.path.isfile(DEFAULT_API_KEY_FILE):
+            with open(DEFAULT_API_KEY_FILE, 'w') as f:
+                f.write(default_client.api_key)
+        print(f'Default API key for testing purposes saved to: {os.path.abspath(DEFAULT_API_KEY_FILE)}')
+
+    # Create NexusML Web App
+    web_app = ClientDB(client_id=KNOWN_CLIENT_IDS['web'],
                        organization_id=1,
-                       auth0_id=known_client_uuids['Web'],
+                       auth0_id=KNOWN_CLIENT_UUIDS['web'],
                        name='NexusML Web App',
                        description='Interactive web application')
     saved = _save_if_not_exist(web_app)
     if saved:
         web_app.update_api_key(expire_at=(datetime.utcnow() + timedelta(seconds=1)))  # disable API keys in the Web App
 
-    # Reserved clients
+    # Create reserved clients
     reserved_clients = [
         ClientDB(client_id=x, organization_id=1, name=f'Reserved Official Client {x}')
-        for x in range(max(known_client_ids.values()) + 1, NUM_RESERVED_CLIENTS + 1)
+        for x in range(max(KNOWN_CLIENT_IDS.values()) + 2, NUM_RESERVED_CLIENTS + 2)
     ]
     for reserved_client in reserved_clients:
         saved = _save_if_not_exist(reserved_client)

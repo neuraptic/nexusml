@@ -1,4 +1,3 @@
-import os
 from typing import List, Type
 
 import pytest
@@ -36,7 +35,6 @@ from nexusml.database.permissions import UserPermission
 from nexusml.database.tasks import TaskDB
 from nexusml.enums import ResourceAction
 from nexusml.enums import ResourceType
-from tests.api.env import ENV_SESSION_USER_UUID
 from tests.api.integration.conftest import MockClient
 from tests.api.integration.test_api_keys import generate_api_key
 from tests.api.integration.utils import get_endpoint
@@ -47,12 +45,12 @@ from tests.api.utils import load_default_resource
 
 pytestmark = [pytest.mark.integration, pytest.mark.slow]
 
-_CLIENT_ID = NUM_RESERVED_CLIENTS + 1  # first client IDs are reserved for official apps
+_CLIENT_ID = NUM_RESERVED_CLIENTS + 2  # First client IDs are reserved for official apps
 
 
 class TestResourcePermissions:
 
-    def test_delete(self, client: MockClient):
+    def test_delete(self, client: MockClient, session_user_id: str):
 
         def _get_permissions(task: Task) -> tuple:
             user_permissions = UserPermission.query().filter_by(resource_uuid=task.uuid()).all()
@@ -60,19 +58,19 @@ class TestResourcePermissions:
                 RolePermission.resource_uuid == task.uuid(), RoleDB.name.notin_([ADMIN_ROLE, MAINTAINER_ROLE])).all())
             return user_permissions, role_permissions
 
-        fixtures = _get_fixtures()
-        _set_permissions(fixtures)
+        fixtures = _get_fixtures(session_user_id=session_user_id)
+        _set_permissions(session_user_id=session_user_id)
         user_permissions, role_permissions = _get_permissions(task=fixtures['task'])
         assert user_permissions and role_permissions
         endpoint_url = get_endpoint(parameterized_endpoint=ENDPOINT_TASK, resource=fixtures['task'])
         response = client.send_request(method='DELETE', url=endpoint_url + '/permissions')
         assert response.status_code == HTTP_DELETE_STATUS_CODE
         db_commit_and_expire()
-        fixtures = _get_fixtures()
+        fixtures = _get_fixtures(session_user_id=session_user_id)
         user_permissions, role_permissions = _get_permissions(task=fixtures['task'])
         assert not user_permissions and not role_permissions
 
-    def test_get(self, client: MockClient):
+    def test_get(self, client: MockClient, session_user_id: str):
 
         def _check_permissions(actual_permissions: dict, expected_permissions: dict):
 
@@ -95,8 +93,8 @@ class TestResourcePermissions:
                                      expected_perms=expected_permissions['collaborators'],
                                      agent='collaborator')
 
-        fixtures = _get_fixtures()
-        _set_permissions(fixtures)
+        fixtures = _get_fixtures(session_user_id=session_user_id)
+        _set_permissions(session_user_id=session_user_id)
         admin_role = RoleDB.get_from_id(id_value=ADMIN_ROLE, parent=fixtures['organization'])
         maintainer_role = RoleDB.get_from_id(id_value=MAINTAINER_ROLE, parent=fixtures['organization'])
         collaborator = (CollaboratorDB.query().filter_by(organization_id=fixtures['organization'].organization_id,
@@ -461,8 +459,8 @@ class TestTagsAPIKey:
         self._api_key_scopes_tester.test_put(client=client)
 
 
-def _get_fixtures() -> dict:
-    user = UserDB.get_from_uuid(os.environ[ENV_SESSION_USER_UUID])
+def _get_fixtures(session_user_id: str) -> dict:
+    user = UserDB.get_from_uuid(session_user_id)
     organization = OrganizationDB.get(organization_id=user.organization_id)
     role = RoleDB.get_from_id(id_value='Dasci', parent=organization)
     task = load_default_resource(resource_type=Task)
@@ -482,8 +480,8 @@ def _get_fixtures() -> dict:
     }
 
 
-def _set_permissions(fixtures: dict):
-    fixtures = _get_fixtures()
+def _set_permissions(session_user_id: str):
+    fixtures = _get_fixtures(session_user_id=session_user_id)
     fixtures['user'].permissions.delete()
     user_perms = [
         # Permissions in session user's organization

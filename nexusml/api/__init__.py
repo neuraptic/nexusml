@@ -1,6 +1,7 @@
 from datetime import timedelta
 import os
 import sys
+import warnings
 
 from apispec import APISpec
 from apispec.ext.marshmallow import MarshmallowPlugin
@@ -26,15 +27,27 @@ from nexusml.api.views import tasks
 from nexusml.api.views.core import limiter
 from nexusml.api.views.core import register_all_endpoints_docs
 from nexusml.constants import CONFIG_FILE
+from nexusml.constants import DEFAULT_CELERY_BROKER_URL
+from nexusml.constants import DEFAULT_CELERY_RESULT_BACKEND
 from nexusml.constants import SWAGGER_UI_URL
 from nexusml.constants import SWAGGER_URL
 from nexusml.database.core import create_tables
 from nexusml.database.core import db
+from nexusml.database.organizations import create_default_admin_and_maintainer_roles
+from nexusml.database.organizations import create_default_organization
 from nexusml.database.organizations import create_known_clients_and_reserved_clients
-from nexusml.database.organizations import create_main_admin_and_maintainer
-from nexusml.database.organizations import create_main_organization
 from nexusml.database.subscriptions import create_default_plans
+from nexusml.env import ENV_API_DOMAIN
+from nexusml.env import ENV_AUTH0_CLIENT_ID
+from nexusml.env import ENV_AUTH0_CLIENT_SECRET
+from nexusml.env import ENV_AUTH0_DOMAIN
+from nexusml.env import ENV_AUTH0_JWKS
+from nexusml.env import ENV_AUTH0_SIGN_UP_REDIRECT_URL
+from nexusml.env import ENV_AUTH0_TOKEN_AUDIENCE
+from nexusml.env import ENV_AUTH0_TOKEN_ISSUER
+from nexusml.env import ENV_AWS_ACCESS_KEY_ID
 from nexusml.env import ENV_AWS_S3_BUCKET
+from nexusml.env import ENV_AWS_SECRET_ACCESS_KEY
 from nexusml.env import ENV_CELERY_BROKER_URL
 from nexusml.env import ENV_CELERY_RESULT_BACKEND
 from nexusml.env import ENV_DB_NAME
@@ -44,6 +57,10 @@ from nexusml.env import ENV_MAIL_PASSWORD
 from nexusml.env import ENV_MAIL_SERVER
 from nexusml.env import ENV_MAIL_USERNAME
 from nexusml.env import ENV_NOTIFICATION_EMAIL
+from nexusml.env import ENV_RSA_KEY_FILE
+from nexusml.env import ENV_SUPPORT_EMAIL
+from nexusml.env import ENV_WAITLIST_EMAIL
+from nexusml.env import ENV_WEB_CLIENT_ID
 
 __all__ = ['create_app']
 """
@@ -54,8 +71,16 @@ Flask Application Factory Pattern
 def create_app(setup_database: bool = True):
     app = Flask(__name__)
 
+    # Check environment variables
+    _check_env_variables()
+
     # Set app config
     _set_app_config(app)
+
+    # If the default api key is enabled, show a warning
+    if config.get('general')['default_api_key_enabled']:
+        warnings.warn('WARNING: The default API key is enabled. '
+                      'This is a security risk and should be disabled in production.')
 
     # Set config for Swagger documentation
     _set_swagger_config(app)
@@ -93,6 +118,50 @@ def create_app(setup_database: bool = True):
     return app
 
 
+def _check_env_variables():
+    required_env_vars = [
+        ENV_API_DOMAIN,
+        ENV_RSA_KEY_FILE,
+        ENV_WEB_CLIENT_ID,
+        ENV_MAIL_SERVER,
+        ENV_MAIL_USERNAME,
+        ENV_MAIL_PASSWORD,
+        ENV_NOTIFICATION_EMAIL,
+        ENV_WAITLIST_EMAIL,
+        ENV_SUPPORT_EMAIL,
+        ENV_DB_NAME,
+        ENV_DB_USER,
+        ENV_DB_PASSWORD
+    ]
+
+    optional_env_vars = [
+        ENV_CELERY_BROKER_URL,
+        ENV_CELERY_RESULT_BACKEND,
+        ENV_AUTH0_DOMAIN,
+        ENV_AUTH0_CLIENT_ID,
+        ENV_AUTH0_CLIENT_SECRET,
+        ENV_AUTH0_JWKS,
+        ENV_AUTH0_SIGN_UP_REDIRECT_URL,
+        ENV_AUTH0_TOKEN_AUDIENCE,
+        ENV_AUTH0_TOKEN_ISSUER,
+        ENV_AWS_ACCESS_KEY_ID,
+        ENV_AWS_SECRET_ACCESS_KEY,
+        ENV_AWS_S3_BUCKET
+    ]
+
+    missing_required_vars = [f'"{var}"' for var in required_env_vars if var not in os.environ]
+    if missing_required_vars:
+        print('ERROR: The following required environment variables have not been set: '
+              + ', '.join(missing_required_vars))
+        print('Exiting')
+        sys.exit(1)
+
+    missing_optional_vars = [f'"{var}"' for var in optional_env_vars if var not in os.environ]
+    if missing_optional_vars:
+        warnings.warn('The following optional environment variables have not been set: '
+                      + ', '.join(missing_optional_vars))
+
+
 def _set_app_config(app):
     # Initialize app config
     config.init_app(app)
@@ -119,7 +188,8 @@ def _set_app_config(app):
 
     for param, value in _db_connection.items():
         if value not in os.environ:
-            print(f'FATAL: environment variable "{value}" has not been set. Exiting')
+            print(f'ERROR: Environment variable "{value}" has not been set')
+            print('Exiting')
             sys.exit(1)
         else:
             db_uri = db_uri.replace(param, os.environ[value])
@@ -169,7 +239,9 @@ def _set_swagger_config(app):
 
 
 def _set_celery_config(app):
-    _celery_beat_schedule = {
+    celery_broker_url = os.environ.get(ENV_CELERY_BROKER_URL, DEFAULT_CELERY_BROKER_URL)
+    celery_result_backend = os.environ.get(ENV_CELERY_RESULT_BACKEND, DEFAULT_CELERY_RESULT_BACKEND)
+    celery_beat_schedule = {
         'cl_service': {
             'task': 'nexusml.api.jobs.periodic_jobs.run_cl_service',
             'schedule': timedelta(days=1),
@@ -208,10 +280,10 @@ def _set_celery_config(app):
         },
     }
 
-    app.config.from_mapping(CELERY=dict(broker_url=os.environ[ENV_CELERY_BROKER_URL],
-                                        result_backend=os.environ[ENV_CELERY_RESULT_BACKEND],
+    app.config.from_mapping(CELERY=dict(broker_url=celery_broker_url,
+                                        result_backend=celery_result_backend,
                                         task_ignore_result=True,
-                                        beat_schedule=_celery_beat_schedule),)
+                                        beat_schedule=celery_beat_schedule),)
 
 
 def _set_routes(app: Flask):
@@ -273,8 +345,8 @@ def _setup_database(app):
         create_tables()
 
         # Create reserved organization and clients
-        create_main_organization()
-        create_main_admin_and_maintainer()
+        create_default_organization()
+        create_default_admin_and_maintainer_roles()
         create_known_clients_and_reserved_clients()
 
         # Create default subscription plans

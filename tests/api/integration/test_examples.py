@@ -265,7 +265,7 @@ class TestExamples:
         #       in `tests.integration.utils`
         pass
 
-    def test_post(self, client: MockClient):
+    def test_post(self, client: MockClient, mock_client_id: str, session_user_id: str, session_user_auth0_id: str):
         task = load_default_resource(resource_type=Task)
         single_json = {'batch': [mock_element_values_json(task_id=1)]}
         batch_json = {'batch': [mock_element_values_json(task_id=1)] * 5}
@@ -291,7 +291,9 @@ class TestExamples:
         ###############################################################
         # Try to exceed the maximum number of examples (batch upload) #
         ###############################################################
-        restore_db()
+        restore_db(mock_client_id=mock_client_id,
+                   session_user_id=session_user_id,
+                   session_user_auth0_id=session_user_auth0_id)
         task = load_default_resource(resource_type=Task)
         endpoint_url = get_endpoint(parameterized_endpoint=ENDPOINT_EXAMPLES, resource=task)
         max_examples = 3
@@ -305,7 +307,9 @@ class TestExamples:
         ######################################################################
         # Try to exceed the maximum number of examples (concurrent requests) #
         ######################################################################
-        restore_db()
+        restore_db(mock_client_id=mock_client_id,
+                   session_user_id=session_user_id,
+                   session_user_auth0_id=session_user_auth0_id)
         empty_table(ExampleDB)
 
         task = load_default_resource(resource_type=Task)
@@ -325,7 +329,9 @@ class TestExamples:
         ##################################################
         # Try to exceed space quota limit (batch upload) #
         ##################################################
-        restore_db()
+        restore_db(mock_client_id=mock_client_id,
+                   session_user_id=session_user_id,
+                   session_user_auth0_id=session_user_auth0_id)
         task = load_default_resource(resource_type=Task)
         endpoint_url = get_endpoint(parameterized_endpoint=ENDPOINT_EXAMPLES, resource=task)
         set_quota_usage(db_object=task.db_object(), quota='space', usage=0)
@@ -339,7 +345,9 @@ class TestExamples:
         #########################################################
         # Try to exceed space quota limit (concurrent requests) #
         #########################################################
-        restore_db()
+        restore_db(mock_client_id=mock_client_id,
+                   session_user_id=session_user_id,
+                   session_user_auth0_id=session_user_auth0_id)
 
         task = load_default_resource(resource_type=Task)
 

@@ -1,14 +1,16 @@
 # Quickstart Guide
 
-Welcome to the NexusML Quickstart Guide! This guide will help you set up and start using NexusML in a few simple steps.
+Welcome to the NexusML Quickstart Guide! This guide is designed to help you set up and use NexusML, with clear 
+instructions to ensure a smooth onboarding experience.
 
 <!-- toc -->
 
 - [Prerequisites](#prerequisites)
+  - [Environment Variables](#environment-variables)
   - [MySQL Server](#mysql-server)
   - [Redis](#redis)
-  - [Auth0](#auth0)
   - [RSA Key Pair](#rsa-key-pair)
+  - [Auth0 (Optional)](#auth0-optional)
   - [AWS S3 (Optional)](#aws-s3-optional)
 - [Installation](#installation)
 - [Usage](#usage)
@@ -18,6 +20,44 @@ Welcome to the NexusML Quickstart Guide! This guide will help you set up and sta
 This guide uses [Ubuntu](https://ubuntu.com/download), but you may choose any Linux distribution that suits your 
 needs. However, we can only ensure compatibility with Ubuntu or [Amazon Linux](https://aws.amazon.com/amazon-linux-2). 
 Windows is also supported.
+
+### Environment Variables
+
+The [nexusml/env.py](../nexusml/env.py) file contains the environment variables used by NexusML.
+
+Here is the list of required environment variables:
+
+- `NEXUSML_API_DOMAIN`: The domain of the RESTful API server (without "https://" or "http://").
+- `NEXUSML_API_RSA_KEY_FILE`: The path to the RSA private key file used to sign JWT tokens.
+- `NEXUSML_API_WEB_CLIENT_ID`: The UUID of the official web client.
+- `NEXUSML_API_MAIL_SERVER`: The SMTP server used to send emails.
+- `NEXUSML_API_MAIL_USERNAME`: The username for the SMTP server.
+- `NEXUSML_API_MAIL_PASSWORD`: The password for the SMTP server.
+- `NEXUSML_API_NOTIFICATION_EMAIL`: The email address used to send notifications.
+- `NEXUSML_API_WAITLIST_EMAIL`: The email address used to send waitlist notifications.
+- `NEXUSML_API_SUPPORT_EMAIL`: The email address used for support.
+- `NEXUSML_DB_NAME`: The name of the MySQL database.
+- `NEXUSML_DB_USER`: The MySQL database username.
+- `NEXUSML_DB_PASSWORD`: The MySQL database password.
+
+Here is the list of optional environment variables:
+
+- `NEXUSML_CELERY_BROKER_URL`: The URL of the Redis server used as the Celery broker. Defaults to 
+  "redis://localhost:6379/0".
+- `NEXUSML_CELERY_RESULT_BACKEND`: The URL of the Redis server used as the Celery result backend. Defaults to 
+  "redis://localhost:6379/0".
+- `NEXUSML_AUTH0_DOMAIN`: The domain of the Auth0 tenant.
+- `NEXUSML_AUTH0_CLIENT_ID`: Auth0 client management ID.
+- `NEXUSML_AUTH0_CLIENT_SECRET`: Auth0 client management secret.
+- `NEXUSML_AUTH0_JWKS`: The URL of the Auth0 JWKS endpoint.
+- `NEXUSML_AUTH0_SIGN_UP_REDIRECT_URL`: The URL to redirect users to after signing up.
+- `NEXUSML_AUTH0_TOKEN_AUDIENCE`: The audience of Auth0 tokens.
+- `NEXUSML_AUTH0_TOKEN_ISSUER`: The issuer of Auth0 tokens.
+- `AWS_ACCESS_KEY_ID`: The AWS access key ID.
+- `AWS_SECRET_ACCESS_KEY`: The AWS secret access key.
+- `AWS_S3_BUCKET`: The name of the AWS S3 bucket used by the file storage backend.
+
+Note: If you are using Auth0 or AWS S3, you will need to set all the environment variables related to these services.
 
 ### MySQL Server
 
@@ -116,47 +156,6 @@ Enable Redis to start at boot:
 sudo systemctl enable redis-server
 ```
 
-### Auth0
-
-NexusML uses [Auth0](https://auth0.com/) for authentication, ensuring secure login and access management. To set up 
-Auth0 for NexusML, follow these steps:
-
-1. **Create an Auth0 Account**:
-
-   - Visit [Auth0's website](https://auth0.com/) and sign up for a free account.
-   - Once logged in, go to the **Dashboard**.
-
-2. **Create a New Application**:
-
-   - In the Dashboard, click on **Applications** in the sidebar and select **Create Application**.
-   - Choose **Regular Web Application** or **Machine to Machine Application**, depending on your needs.
-   - Name your application and choose the platform that best suits your setup.
-
-3. **Configure Application Settings**:
-
-   - After creating your application, navigate to its settings.
-   - Add the **callback URLs** that will be used for authentication. Example:
-
-     ```
-     http://localhost:3000/callback
-     ```
-
-4. **Get Client ID and Client Secret**:
-
-    - Scroll down to find the **Client ID** and **Client Secret** (you will need these to configure NexusML).
-
-5. **Set NexusML Environment Variables**
-
-    - Set the following environment variables:
-
-      ```
-      NEXUSML_AUTH0_DOMAIN=<your-auth0-domain>
-      NEXUSML_AUTH0_CLIENT_ID=<your-auth0-client-id>
-      NEXUSML_AUTH0_CLIENT_SECRET=<your-auth0-client-secret>
-      NEXUSML_AUTH0_JWKS=https://<your-auth0-domain>/.well-known/jwks.json
-      NEXUSML_AUTH0_SIGN_UP_REDIRECT_URL=<your-redirect-url>
-      ```
-
 ### RSA Key Pair
 
 NexusML uses RSA key pairs to sign and verify JWT tokens, ensuring secure communication between services. Follow these 
@@ -189,6 +188,30 @@ steps to generate an RSA key pair:
      
 For more information about RSA key management and JWT tokens, please refer to the [OpenSSL](https://www.openssl.org/) 
 and [JWT](https://jwt.io/) documentation.
+
+### Auth0 (Optional)
+
+<div style="text-align: left;">
+  <div style="border: 1px solid #f5c6cb; padding: 10px 10px; background-color: rgba(248, 215, 218, 0.5); color: #721c24; display: flex; align-items: flex-start;">
+    <span style="margin-right: 10px;">⚠️</span>
+    <div>
+      While Auth0 is optional when running NexusML in single-tenant, single-client mode, it is highly recommended to set up Auth0 in production environments for security reasons.
+    </div>
+  </div>
+  <p></p>
+</div>
+
+NexusML uses [Auth0](https://auth0.com/) for authentication, ensuring secure login and access management. To set up 
+Auth0 for NexusML, please refer to the instructions in [auth0.md](auth0.md). After setting up Auth0, you will need to 
+set the following environment variables:
+
+```
+NEXUSML_AUTH0_DOMAIN=<your-auth0-domain>
+NEXUSML_AUTH0_CLIENT_ID=<your-auth0-client-id>
+NEXUSML_AUTH0_CLIENT_SECRET=<your-auth0-client-secret>
+NEXUSML_AUTH0_JWKS=https://<your-auth0-domain>/.well-known/jwks.json
+NEXUSML_AUTH0_SIGN_UP_REDIRECT_URL=<your-redirect-url>
+```
 
 ### AWS S3 (Optional)
 
@@ -252,3 +275,23 @@ You can use NexusML in two ways:
   ```sh
   nexusml-server
   ```
+
+If you are not running the RESTful API server in production, you can use the default API key to access the API. This 
+API key allows you to access the API without authentication, avoiding the need to set up Auth0. To get the default 
+API key, either copy the message shown by the `nexusml-server` command at startup or open the `default_api_key.txt` 
+file located in the `nexusml` package directory.
+
+<div style="text-align: left;">
+  <div style="border: 1px solid #f5c6cb; padding: 10px 10px; background-color: rgba(248, 215, 218, 0.5); color: #721c24;">
+    ⚠️ Make sure that the default API key is not enabled in production
+  </div>
+  <p></p>
+</div>
+
+It is important to make sure that the default API key is not enabled in production. To disable the default API key, 
+update the following line in the `config.yaml` file located in the `nexusml` package directory:
+
+```yaml
+general:
+  default_api_key_enabled: false
+```

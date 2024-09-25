@@ -53,6 +53,7 @@ from nexusml.constants import HTTP_UNPROCESSABLE_ENTITY_STATUS_CODE
 from nexusml.database.base import DBModel
 from nexusml.database.organizations import Agent
 from nexusml.database.organizations import ClientDB
+from nexusml.database.organizations import KNOWN_CLIENT_IDS
 from nexusml.database.organizations import UserDB
 from nexusml.database.services import Service
 from nexusml.database.subscriptions import ClientRateLimits
@@ -126,7 +127,8 @@ def register_endpoint(api: Api,
                 permissions_endpoint_name = endpoint_name + '_permissions'
                 api.add_resource(permissions_view, permissions_url, endpoint=permissions_endpoint_name)
         except Exception as e:
-            print(f'FATAL ERROR: cannot register "{endpoint_url}". Raised error: {str(e)}')
+            print(f'ERROR: Cannot register "{endpoint_url}". Raised error: {str(e)}')
+            print('Exiting')
             sys.exit(1)
 
 
@@ -369,19 +371,28 @@ def validate_token(resource_types: List[Type[Resource]] = None, reject_api_keys:
         def wrapper(*args, **kwargs):
             # Get the token
             try:
+                if 'Authorization' not in request.headers or 'Bearer ' not in request.headers['Authorization']:
+                    return error_response(code=HTTP_UNAUTHORIZED_STATUS_CODE, message='Unauthorized')
+                enc_token = request.headers['Authorization'].replace('Bearer ', '')
+                # Try to decode an API key
                 try:
-                    if 'Authorization' not in request.headers or 'Bearer ' not in request.headers['Authorization']:
-                        return error_response(code=HTTP_UNAUTHORIZED_STATUS_CODE, message='Unauthorized')
-                    enc_token = request.headers['Authorization'].replace('Bearer ', '')
-                    token = decode_auth0_token(auth0_token=enc_token)
-                    token_type = 'auth0_token'
-                except (jwt.InvalidSignatureError, jwt.PyJWKClientError):
                     token = decode_api_key(api_key=enc_token)
                     token_type = 'api_key'
-            except (jwt.InvalidTokenError, jwt.InvalidSignatureError, ValueError) as e:
-                return error_response(code=HTTP_BAD_REQUEST_STATUS_CODE, message='Invalid token: ' + str(e))
+                except (jwt.InvalidSignatureError, jwt.InvalidTokenError, ValueError):
+                    # If it's not an API key, try to decode an Auth0 token
+                    token = decode_auth0_token(auth0_token=enc_token)
+                    token_type = 'auth0_token'
+            except (jwt.InvalidSignatureError, jwt.PyJWKClientError, KeyError):
+                # Note: `KeyError` may be raised if Auth0 env variables are not set
+                return error_response(code=HTTP_BAD_REQUEST_STATUS_CODE, message='Invalid token')
             except Exception:
                 return error_response(code=HTTP_BAD_REQUEST_STATUS_CODE, message='Invalid token')
+
+            # If the token corresponds to the default client's API key, check if the default client is enabled
+            default_client = ClientDB.get(client_id=KNOWN_CLIENT_IDS['default'])
+            default_client_enabled = config.get('general')['default_api_key_enabled']
+            if token_type == 'api_key' and token['aud'] == str(default_client.uuid) and not default_client_enabled:
+                return error_response(code=HTTP_FORBIDDEN_STATUS_CODE, message='Invalid token')
 
             # Check whether API keys are supported in this endpoint
             reject_api_keys_ = [x.upper() for x in reject_api_keys] if reject_api_keys else []

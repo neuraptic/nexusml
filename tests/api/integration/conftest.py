@@ -38,11 +38,16 @@ from nexusml.api.resources.tasks import Task
 from nexusml.api.utils import API_DOMAIN
 from nexusml.api.utils import config
 from nexusml.api.views import organizations as organizations_views
+from nexusml.constants import CONFIG_FILE
+from nexusml.constants import DEFAULT_API_KEY_FILE
 from nexusml.database.organizations import client_scopes
 from nexusml.enums import FileStorageBackend
 from nexusml.env import ENV_AUTH0_JWKS
+from nexusml.env import ENV_AUTH0_TOKEN_AUDIENCE
+from nexusml.env import ENV_AUTH0_TOKEN_ISSUER
 from nexusml.env import ENV_AWS_ACCESS_KEY_ID
 from nexusml.env import ENV_AWS_SECRET_ACCESS_KEY
+from nexusml.env import ENV_RSA_KEY_FILE
 from nexusml.utils import deprecated
 from nexusml.utils import get_s3_config
 from tests.api.conftest import empty_db
@@ -51,12 +56,6 @@ from tests.api.conftest import restore_db
 from tests.api.conftest import set_app_config
 from tests.api.constants import CLIENT_MAX_THREADS
 from tests.api.constants import CLIENT_SCOPES
-from tests.api.env import ENV_ID_RSA_KEY_FILE
-from tests.api.env import ENV_MOCK_CLIENT_ID
-from tests.api.env import ENV_SESSION_USER_AUTH0_ID
-from tests.api.env import ENV_SESSION_USER_UUID
-from tests.api.env import ENV_TOKEN_AUDIENCE
-from tests.api.env import ENV_TOKEN_ISSUER
 from tests.conftest import Singleton
 
 ###########
@@ -113,9 +112,19 @@ class Backend(metaclass=Singleton):
 
 @pytest.fixture(scope='session', autouse=True)
 def backend() -> Backend:
+    # Create and run the backend
     backend_ = Backend()
     backend_.run()
-    return backend_
+
+    # Run test session
+    yield backend_
+
+    # Delete the files related to the backend
+    try:
+        os.remove(CONFIG_FILE)
+        os.remove(DEFAULT_API_KEY_FILE)
+    except FileNotFoundError:
+        pass
 
 
 @pytest.fixture(scope='function', autouse=True)
@@ -125,10 +134,12 @@ def _backend_app_context(backend):
 
 
 @pytest.fixture(scope='session', autouse=True)
-def _setup_db(backend):
+def _setup_db(backend, mock_client_id, session_user_id, session_user_auth0_id):
     # TODO: Is this necessary? `_restore_environment` already calls `restore_db()`.
     with backend.app.app_context():
-        populate_db()
+        populate_db(mock_client_id=mock_client_id,
+                    session_user_id=session_user_id,
+                    session_user_auth0_id=session_user_auth0_id)
 
 
 @pytest.fixture(scope='session', autouse=True)
@@ -150,27 +161,31 @@ def _empty_db(backend):
 
 
 class MockClient:
-    default_user = {
-        'uuid': os.environ[ENV_SESSION_USER_UUID],
-        'auth0_id': os.environ[ENV_SESSION_USER_AUTH0_ID],
-        'email': 'test@testorg.com',
-        'password': '',
-        'password_salt': '',
-        'first_name': 'Test',
-        'last_name': 'User',
-        'roles': 'customer',
-        'company': 'Test Co.',
-        'email_verified': True,
-    }
 
-    def __init__(self, app: Flask):
+    def __init__(self, app: Flask, client_id: str, session_user_id: str, session_user_auth0_id: str):
+        # Set Flask app
         self._app = app
         self._app.test_client_class = FlaskClient
         self._always_use_test_client = False  # TODO: Remove this attribute when `send_request()` is removed
 
-        # Set initial values
-        self.client_id = os.environ[ENV_MOCK_CLIENT_ID]
-        self.user = self.default_user
+        # Set client data
+        self.client_id = client_id
+
+        # Set user data
+        self._user_data = {
+            'uuid': session_user_id,
+            'auth0_id': session_user_auth0_id,
+            'email': 'test@testorg.com',
+            'password': '',
+            'password_salt': '',
+            'first_name': 'Test',
+            'last_name': 'User',
+            'roles': 'customer',
+            'company': 'Test Co.',
+            'email_verified': True,
+        }
+
+        # Set Auth0 token
         self.token_type = 'auth0'
         self.token_scopes = CLIENT_SCOPES
         self.token = self._generate_mock_token()
@@ -180,13 +195,14 @@ class MockClient:
         self._init_token_type = self.token_type
         self._init_token_scopes = self.token_scopes
         self._init_token = self.token
+        self._init_user_data = dict(self._user_data)
 
     def restore(self):
         self.client_id = self._init_client_id
-        self.user = self.default_user
         self.token_type = self._init_token_type
         self.token_scopes = self._init_token_scopes
         self.token = self._init_token
+        self._user_data = dict(self._init_user_data)
 
     def _generate_mock_token(self):
         return self._generate_mock_auth0_token() if self.token_type == 'auth0' else self._generate_mock_api_key()
@@ -196,24 +212,24 @@ class MockClient:
         assert self.token_scopes
         now = datetime.utcnow()
         claims = {
-            'iss': os.environ[ENV_TOKEN_ISSUER],
-            'aud': os.environ[ENV_TOKEN_AUDIENCE],
+            'iss': os.environ[ENV_AUTH0_TOKEN_ISSUER],
+            'aud': os.environ[ENV_AUTH0_TOKEN_AUDIENCE],
             'iat': now,
             'exp': now + timedelta(minutes=120),
             'scope': self.token_scopes,
             'azp': self.client_id,
-            'sub': self.user['auth0_id'],
-            'name': self.user['first_name'] + ' ' + self.user['last_name'],
-            'given_name': self.user['first_name'],
-            'family_name': self.user['last_name'],
-            'email': self.user['email'],
-            'email_verified': self.user['email_verified'],
-            'company': self.user['company']
+            'sub': self._user_data['auth0_id'],
+            'name': self._user_data['first_name'] + ' ' + self._user_data['last_name'],
+            'given_name': self._user_data['first_name'],
+            'family_name': self._user_data['last_name'],
+            'email': self._user_data['email'],
+            'email_verified': self._user_data['email_verified'],
+            'company': self._user_data['company']
         }
 
         # Create tmp JWKS for token validation
         try:
-            with open(os.environ[ENV_ID_RSA_KEY_FILE], 'rb') as fd:
+            with open(os.environ[ENV_RSA_KEY_FILE], 'rb') as fd:
                 key_from_pem = jwk.JWK.from_pem(fd.read())
 
                 kid = 'jpkx3y6aihtbjw9cw6j3j0257yj'
@@ -236,10 +252,11 @@ class MockClient:
                 os.environ[ENV_AUTH0_JWKS] = f'file:///{jwks_file.name}'
                 jwks_file.close()
         except Exception:
-            print(f'FATAL ERROR: failed to load RSA key from "{os.environ[ENV_ID_RSA_KEY_FILE]}". Exiting')
+            print(f'ERROR: Failed to load RSA key from "{os.environ[ENV_RSA_KEY_FILE]}"')
+            print('Exiting')
             sys.exit(1)
 
-        with open(os.environ[ENV_ID_RSA_KEY_FILE], 'rb') as fd:
+        with open(os.environ[ENV_RSA_KEY_FILE], 'rb') as fd:
             private_key = serialization.load_pem_private_key(fd.read(), password=None, backend=default_backend())
         return jwt.encode(claims, private_key, 'RS256', {'kid': kid})
 
@@ -497,8 +514,11 @@ class FlaskClient(_FlaskClient):
 
 
 @pytest.fixture(scope='function')
-def client(backend) -> MockClient:
-    return MockClient(backend.app)
+def client(backend, mock_client_id, session_user_id, session_user_auth0_id) -> MockClient:
+    return MockClient(app=backend.app,
+                      client_id=mock_client_id,
+                      session_user_id=session_user_id,
+                      session_user_auth0_id=session_user_auth0_id)
 
 
 @pytest.fixture(scope='function')
@@ -509,6 +529,8 @@ def custom_client(request, client) -> MockClient:
         - Token type
         - Token scopes
     """
+
+    init_client_id = client.client_id
 
     # Get fixture params
     kwargs = dict()
@@ -532,7 +554,7 @@ def custom_client(request, client) -> MockClient:
     yield client
 
     # Restore client ID and token
-    client.update_client_id(client_id=os.environ[ENV_MOCK_CLIENT_ID])
+    client.update_client_id(client_id=init_client_id)
 
 
 ###############
@@ -555,10 +577,12 @@ def mock_s3():
 
 
 @pytest.fixture(scope='function', autouse=True)
-def _restore_environment(backend, client):
+def _restore_environment(backend, client, mock_client_id, session_user_id, session_user_auth0_id):
     # Restore backend
     backend.set_app_config()
-    restore_db()
+    restore_db(mock_client_id=mock_client_id,
+               session_user_id=session_user_id,
+               session_user_auth0_id=session_user_auth0_id)
     cache.clear()
     # Restore client
     client.restore()
@@ -788,7 +812,6 @@ def _find_matching_user(email=None, auth0_id=None):
 
 
 def _mock_request_response(http_method: str, *args, **kwargs):
-    print(f'Mocking request: {http_method} - {args} - {kwargs}')
     http_method_mock_responses = {
         'delete': mock_delete_responses,
         'get': mock_get_responses,
@@ -807,8 +830,6 @@ def _mock_request_response(http_method: str, *args, **kwargs):
 
     for url_regex, response in mock_responses.items():
         if re.match(url_regex, url_):
-            print(f'Found match: {url_regex}')
-
             if email or auth0_id:
                 # Return a specific mock response if email matches
                 if email and http_method == 'post' and email in response:

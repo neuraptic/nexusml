@@ -168,7 +168,10 @@ def _local_storage_backend(monkeypatch, create_root_path: bool = False) -> Flask
 
 def _create_local_store_test_client(monkeypatch, create_root_path: bool) -> MockClient:
     with _local_storage_backend(monkeypatch, create_root_path=create_root_path) as app:
-        client = MockClient(app=app)
+        client = MockClient(app=app,
+                            client_id=str(uuid.uuid4()),
+                            session_user_id=str(uuid.uuid4()),
+                            session_user_auth0_id=str(uuid.uuid4()))
         client._always_use_test_client = True
         yield client
 
@@ -910,7 +913,10 @@ class TestMultipartUploadView:
         self,
         mock_s3,
         client: MockClient,
-        # storage_backend: FileStorageBackend
+        # storage_backend: FileStorageBackend,
+        mock_client_id: str,
+        session_user_id: str,
+        session_user_auth0_id: str
     ):
         storage_backend = FileStorageBackend.S3  # TODO: Remove this line when the local storage backend tests are fixed
         if storage_backend == FileStorageBackend.LOCAL:
@@ -975,7 +981,9 @@ class TestMultipartUploadView:
         ####################################
         # TRY TO EXCEED DECLARED FILE SIZE #
         ####################################
-        restore_db()
+        restore_db(mock_client_id=mock_client_id,
+                   session_user_id=session_user_id,
+                   session_user_auth0_id=session_user_auth0_id)
         cache.clear()
 
         file: TaskFile = load_default_resource(resource_type=TaskFile, parents_types=[Task])
@@ -999,7 +1007,9 @@ class TestMultipartUploadView:
         #########################################################
         # TRY TO COMPLETE AN UPLOAD WHEN SOME PARTS ARE MISSING #
         #########################################################
-        restore_db()
+        restore_db(mock_client_id=mock_client_id,
+                   session_user_id=session_user_id,
+                   session_user_auth0_id=session_user_auth0_id)
         cache.clear()
 
         file: TaskFile = load_default_resource(resource_type=TaskFile, parents_types=[Task])

@@ -49,8 +49,10 @@ def client(app):
 
 
 @pytest.fixture(scope='function', autouse=True)
-def _restore_db(app_context):
-    restore_db()
+def _restore_db(app_context, mock_client_id, session_user_id, session_user_auth0_id):
+    restore_db(mock_client_id=mock_client_id,
+               session_user_id=session_user_id,
+               session_user_auth0_id=session_user_auth0_id)
 
 
 @pytest.fixture(scope='session', autouse=True)

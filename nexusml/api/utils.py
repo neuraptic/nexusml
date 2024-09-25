@@ -35,9 +35,9 @@ from nexusml.env import ENV_AUTH0_CLIENT_ID
 from nexusml.env import ENV_AUTH0_CLIENT_SECRET
 from nexusml.env import ENV_AUTH0_DOMAIN
 from nexusml.env import ENV_AUTH0_JWKS
+from nexusml.env import ENV_AUTH0_TOKEN_AUDIENCE
+from nexusml.env import ENV_AUTH0_TOKEN_ISSUER
 from nexusml.env import ENV_RSA_KEY_FILE
-from nexusml.env import ENV_TOKEN_AUDIENCE
-from nexusml.env import ENV_TOKEN_ISSUER
 
 ##########
 # CONFIG #
@@ -90,7 +90,8 @@ DEFAULT_CONFIG = {
         },
     },
     'general': {
-        'enable_demo_tasks': True
+        'demo_tasks_enabled': True,
+        'default_api_key_enabled': True  # Default API key for testing purposes.
     },
     'jobs': {
         'abort_upload_after': 7,  # Uploads that don't complete within the specified number of days will be aborted.
@@ -333,7 +334,8 @@ class NexusMLConfig:
                                                                            password=None,
                                                                            backend=default_backend())
         except Exception:
-            print(f'FATAL ERROR: failed to load RSA key from "{os.environ[ENV_RSA_KEY_FILE]}". Exiting')
+            print(f'ERROR: Failed to load RSA key from "{os.environ[ENV_RSA_KEY_FILE]}"')
+            print('Exiting')
             sys.exit(1)
 
         return self._rsa_private_key
@@ -473,8 +475,8 @@ def decode_auth0_token(auth0_token: str) -> dict:
     return _decode_jwt(token=auth0_token,
                        public_key=key,
                        verify=True,
-                       issuer=os.environ[ENV_TOKEN_ISSUER],
-                       audience=os.environ[ENV_TOKEN_AUDIENCE])
+                       issuer=os.environ[ENV_AUTH0_TOKEN_ISSUER],
+                       audience=os.environ[ENV_AUTH0_TOKEN_AUDIENCE])
 
 
 def decode_api_key(api_key: str, verify: bool = True) -> dict:

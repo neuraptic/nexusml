@@ -38,7 +38,7 @@ from nexusml.database.core import db_query
 from nexusml.database.core import delete_from_db
 from nexusml.database.organizations import ClientDB
 from nexusml.database.organizations import CollaboratorDB
-from nexusml.database.organizations import known_client_uuids
+from nexusml.database.organizations import KNOWN_CLIENT_UUIDS
 from nexusml.database.organizations import RoleDB
 from nexusml.database.organizations import UserDB
 from nexusml.database.permissions import RolePermission
@@ -103,7 +103,7 @@ def create_view(resource_types: List[Type[Resource]] = None,
                   Instead of belonging to an organization, a task is administered/owned by (at most) one organization.
                   A task may become orphaned when such an organization is deleted.
             """
-            if g.token_type == 'api_key' and g.client_uuid not in known_client_uuids.values():
+            if g.token_type == 'api_key' and g.client_uuid not in KNOWN_CLIENT_UUIDS.values():
                 # Get client
                 api_key_client = ClientDB.get_from_uuid(uuid=g.client_uuid)
                 if api_key_client is None:

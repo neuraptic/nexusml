@@ -7,11 +7,12 @@ from nexusml.api.utils import BadRequest
 from nexusml.api.utils import delete_auth0_user
 from nexusml.api.utils import get_auth0_management_api_token
 from nexusml.api.utils import get_auth0_user_data
+from nexusml.env import ENV_AUTH0_DOMAIN
 
 
-@pytest.fixture
-def mock_env(mocker):
-    mocker.patch.dict(os.environ, {'ENV_AUTH0_DOMAIN': 'test_domain', 'AUTH0_DOMAIN': 'test_domain'})
+@pytest.fixture(scope='function', autouse=True)
+def mock_env(monkeypatch):
+    monkeypatch.setenv(ENV_AUTH0_DOMAIN, 'test_domain')
 
 
 def test_get_auth0_management_api_token(mocker):
@@ -22,7 +23,7 @@ def test_get_auth0_management_api_token(mocker):
     request to retrieve the Auth0 management API token and returns the token value.
 
     Test Steps:
-    1. Patch the 'os.environ' to mock any environment variables.
+    1. Patch the 'os.environ' to mock environment variables.
     2. Patch the 'requests.post' method to mock the POST request response.
     3. Mock the response of the POST request with a JSON response containing the access token.
     4. Call get_auth0_management_api_token.
@@ -50,7 +51,7 @@ def test_get_auth0_management_api_token(mocker):
 @pytest.mark.parametrize('auth0_id_or_email, expected_url_extension',
                          [('example@example.com', '?q=email:example%40example.com&search_engine=v3'),
                           ('UUID-UUID-UUID-UUID', '/UUID-UUID-UUID-UUID')])
-def test_get_auth0_user_data(mocker, mock_env, auth0_id_or_email, expected_url_extension):
+def test_get_auth0_user_data(mocker, auth0_id_or_email, expected_url_extension):
     """
     Parameterized test for get_auth0_user_data function.
 
@@ -73,7 +74,7 @@ def test_get_auth0_user_data(mocker, mock_env, auth0_id_or_email, expected_url_e
     - The function returns the correct user account data retrieved from the mocked response.
     """
     access_token = 'dummy_access_token'
-    expected_url: str = f'https://test_domain/api/v2/users{expected_url_extension}'
+    expected_url: str = f'https://{os.environ[ENV_AUTH0_DOMAIN]}/api/v2/users{expected_url_extension}'
     mock_account_data: list = ['account_data']
 
     # Mocking the response of the GET request
@@ -89,7 +90,7 @@ def test_get_auth0_user_data(mocker, mock_env, auth0_id_or_email, expected_url_e
     assert result == mock_account_data[0]
 
 
-def test_get_auth0_user_data_raises_error(mocker, mock_env):
+def test_get_auth0_user_data_raises_error(mocker):
     """
     Test get_auth0_user_data raises BadRequest error.
 
@@ -118,7 +119,7 @@ def test_get_auth0_user_data_raises_error(mocker, mock_env):
         get_auth0_user_data(access_token, auth0_id_or_email)
 
 
-def test_delete_auth0_user(mocker, mock_env):
+def test_delete_auth0_user(mocker):
     """
     Test delete_auth0_user function behavior for successful and failed delete operations.
 
@@ -143,7 +144,7 @@ def test_delete_auth0_user(mocker, mock_env):
 
     auth0_token = 'dummy_auth0_token'
     auth0_id = 'dummy_auth0_id'
-    expected_url = f'https://test_domain/api/v2/users/{auth0_id}'
+    expected_url = f'https://{os.environ[ENV_AUTH0_DOMAIN]}/api/v2/users/{auth0_id}'
 
     # Mocking the response of the DELETE request
     mock_delete = mocker.patch('requests.delete')

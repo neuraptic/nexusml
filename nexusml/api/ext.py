@@ -9,6 +9,7 @@ from flask_mail import Mail
 from redis import StrictRedis
 
 from nexusml.api.utils import config
+from nexusml.constants import DEFAULT_CELERY_BROKER_URL
 from nexusml.env import ENV_CELERY_BROKER_URL
 
 ###########################
@@ -84,7 +85,7 @@ mail = Mail()
 # Redis #
 #########
 
-redis_buffer = StrictRedis.from_url(os.environ[ENV_CELERY_BROKER_URL])
+redis_buffer = StrictRedis.from_url(os.environ.get(ENV_CELERY_BROKER_URL, DEFAULT_CELERY_BROKER_URL))
 
 ####################
 # Helper functions #

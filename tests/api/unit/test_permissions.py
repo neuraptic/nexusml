@@ -2,7 +2,6 @@
 TODO: Mock database connection. Otherwise, these tests cannot be considered as unit tests.
 """
 
-import functools
 from typing import List, Type, Union
 import uuid
 
@@ -42,37 +41,32 @@ _NUM_USERS = 5
 _NUM_ROLES = 3
 
 
-def _setup_db(func):
+def _setup_db(mock_client_id: str, session_user_id: str, session_user_auth0_id: str):
+    # Restore database
+    restore_db(mock_client_id=mock_client_id,
+               session_user_id=session_user_id,
+               session_user_auth0_id=session_user_auth0_id)
+    # Set users
+    empty_table(UserDB)
+    users = [
+        UserDB(user_id=idx,
+               uuid=str(uuid.uuid4()),
+               auth0_id=f'auth0|{111111111111111111111111 + (111111111111111111111111 * idx)}',
+               organization_id=_ORG_ID) for idx in range(1, _NUM_USERS + 1)
+    ]
+    save_to_db(users)
 
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        # Restore database
-        restore_db()
-        # Set users
-        empty_table(UserDB)
-        users = [
-            UserDB(user_id=idx,
-                   uuid=str(uuid.uuid4()),
-                   auth0_id=f'auth0|{111111111111111111111111 + (111111111111111111111111 * idx)}',
-                   organization_id=_ORG_ID) for idx in range(1, _NUM_USERS + 1)
-        ]
-        save_to_db(users)
+    # Set roles
+    empty_table(RoleDB)
+    roles = [RoleDB(role_id=idx, name=(f'Role {idx}'), organization_id=_ORG_ID) for idx in range(1, _NUM_ROLES + 1)]
+    save_to_db(roles)
 
-        # Set roles
-        empty_table(RoleDB)
-        roles = [RoleDB(role_id=idx, name=(f'Role {idx}'), organization_id=_ORG_ID) for idx in range(1, _NUM_ROLES + 1)]
-        save_to_db(roles)
-
-        # Set default task's organization
-        for task in TaskDB.query().all():
-            if task.task_id < 3:
-                task.organization_id = _ORG_ID
-                break
-            save_to_db(task)
-
-        return func(*args, **kwargs)
-
-    return wrapper
+    # Set default task's organization
+    for task in TaskDB.query().all():
+        if task.task_id < 3:
+            task.organization_id = _ORG_ID
+            break
+        save_to_db(task)
 
 
 def _setup_user_perms() -> List[UserPermission]:
@@ -347,14 +341,15 @@ def _setup_user_vs_role_plus_generic_vs_rl() -> List[Union[UserPermission, RoleP
     return user_perms + role_perms
 
 
-@_setup_db
-def test_filter_effective_permissions():
+def test_filter_effective_permissions(mock_client_id: str, session_user_id: str, session_user_auth0_id: str):
     """ Tests for `resources.base.filter_effective_permissions()`. """
+    _setup_db(mock_client_id=mock_client_id,
+              session_user_id=session_user_id,
+              session_user_auth0_id=session_user_auth0_id)
     pass  # TODO
 
 
-@_setup_db
-def test_check_permissions():
+def test_check_permissions(mock_client_id: str, session_user_id: str, session_user_auth0_id: str):
     """ Tests for `resources.base.Resource.check_permissions()`. """
 
     def _check_permissions(resource_or_type: Union[Resource, Type[Resource]], action: ResourceAction, user: UserDB,
@@ -370,6 +365,10 @@ def test_check_permissions():
         except Exception:
             has_permissions = False
         assert has_permissions == should_allow
+
+    _setup_db(mock_client_id=mock_client_id,
+              session_user_id=session_user_id,
+              session_user_auth0_id=session_user_auth0_id)
 
     # Load resources
     org = OrganizationDB.get(organization_id=_ORG_ID)
@@ -443,9 +442,12 @@ def test_check_permissions():
     _check_permissions(resource_or_type=ai_model, action=ResourceAction.READ, user=user, should_allow=False)
 
 
-@_setup_db
-def test_users_permissions():
+def test_users_permissions(mock_client_id: str, session_user_id: str, session_user_auth0_id: str):
     """ Tests for `resources.base.users_permissions()`. """
+
+    _setup_db(mock_client_id=mock_client_id,
+              session_user_id=session_user_id,
+              session_user_auth0_id=session_user_auth0_id)
 
     org = OrganizationDB.get(organization_id=_ORG_ID)
     task = TaskDB.get(task_id=1)
@@ -656,7 +658,9 @@ def test_users_permissions():
     }
 
 
-@_setup_db
-def test_collaborators_permissions():
+def test_collaborators_permissions(mock_client_id: str, session_user_id: str, session_user_auth0_id: str):
     """ Tests for `resources.base.collaborators_permissions()`. """
+    _setup_db(mock_client_id=mock_client_id,
+              session_user_id=session_user_id,
+              session_user_auth0_id=session_user_auth0_id)
     pass  # TODO
