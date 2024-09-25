@@ -1,4 +1,4 @@
-# Contributing Guidelines
+# Contributing to NexusML
 
 <!-- toc -->
 
