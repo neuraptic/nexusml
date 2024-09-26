@@ -212,7 +212,7 @@ def _generate_api_key(client_uuid: str,
     return jwt.encode(payload=token_claims, key=config.rsa_private_key(), algorithm='RS256')
 
 
-def _default_api_key(context):
+def _client_default_api_key(context):
     return _generate_api_key(client_uuid=str(context.get_current_parameters()['uuid']))
 
 
@@ -235,7 +235,7 @@ class ClientDB(Entity, OrganizationER):
     description = Column(String(256))
     # We set the icon in `database.models.files` due to the circular dependency
     # icon = Column(INTEGER(unsigned=True), ForeignKey(OrgFileDB.file_id, ondelete='SET NULL'))
-    api_key = Column(Text, nullable=False, default=_default_api_key)  # TODO: can we set a fixed length?
+    api_key = Column(Text, nullable=False, default=_client_default_api_key)  # TODO: can we set a fixed length?
 
     def update_api_key(self, scopes: List[str] = None, expire_at: datetime = None, never_expire: bool = False) -> str:
         """ Updates client's API key.
