@@ -172,10 +172,13 @@ class TestAPIKey:
 
         # POST /organizations
         orgs_url = api_url + ENDPOINT_ORGANIZATIONS
-        session_user = UserDB.get_from_uuid(session_user_id)
-        delete_from_db(session_user)
         new_org = {'trn': 'test_trn', 'name': 'test_name', 'domain': 'org2.com', 'address': 'test_address'}
         _test_method(method='POST', url=orgs_url, api_key=api_key, json=new_org)
+
+        # DELETE /<organization_id>
+        org = OrganizationDB.get(organization_id=client.organization_id)
+        org_url = api_url + ENDPOINT_ORGANIZATIONS + '/' + str(org.uuid)
+        _test_method(method='DELETE', url=org_url, api_key=api_key)
 
 
 def generate_api_key(scopes: List[str] = None, expire_at: datetime = None) -> str:
