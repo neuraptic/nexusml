@@ -24,6 +24,7 @@ from nexusml.constants import ENDPOINT_MONITORING_SERVICE_NOTIFICATIONS
 from nexusml.constants import ENDPOINT_MONITORING_SERVICE_STATUS
 from nexusml.constants import ENDPOINT_MONITORING_SERVICE_TEMPLATES
 from nexusml.constants import ENDPOINT_SERVICES
+from nexusml.constants import FREE_PLAN_ID
 from nexusml.constants import HTTP_BAD_REQUEST_STATUS_CODE
 from nexusml.constants import HTTP_GET_STATUS_CODE
 from nexusml.constants import HTTP_POST_STATUS_CODE
@@ -212,7 +213,7 @@ def _test_put_service_status(client: MockClient, service_type: ServiceType):
 
     subscription = get_active_subscription(organization_id=task.db_object().organization_id)
     prev_plan_id = subscription.plan_id
-    subscription.plan_id = 1
+    subscription.plan_id = FREE_PLAN_ID
     save_to_db(subscription)
 
     cache.clear()

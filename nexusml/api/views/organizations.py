@@ -65,6 +65,7 @@ from nexusml.constants import ADMIN_ROLE
 from nexusml.constants import API_NAME
 from nexusml.constants import DATETIME_FORMAT
 from nexusml.constants import ENDPOINT_CLIENT_API_KEY
+from nexusml.constants import FREE_PLAN_ID
 from nexusml.constants import GENERIC_DOMAINS
 from nexusml.constants import HTTP_BAD_REQUEST_STATUS_CODE
 from nexusml.constants import HTTP_DELETE_STATUS_CODE
@@ -357,7 +358,7 @@ class OrganizationsView(_OrganizationsView):
         ##############################
         # Subscribe to the Free Plan #
         ##############################
-        subscription = SubscriptionDB(organization_id=org_db_object.organization_id, plan_id=1)
+        subscription = SubscriptionDB(organization_id=org_db_object.organization_id, plan_id=FREE_PLAN_ID)
         #########################################################################################################
         # Create "admin" and "maintainer" roles.                                                                #
 

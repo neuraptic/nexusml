@@ -410,7 +410,7 @@ def populate_db(mock_client_id: str, session_user_id: str, session_user_auth0_id
     create_default_plans()
 
     plan = Plan(
-        plan_id=2,  # 1 is reserved for the Free Plan
+        plan_id=3,  # First two IDs are reserved for default and free plans
         name='Test Plan Name',
         description='Test Plan Description',
         price=12000,
@@ -425,7 +425,7 @@ def populate_db(mock_client_id: str, session_user_id: str, session_user_auth0_id
     save_to_db(plan)
 
     plan_extra = PlanExtra(extra_id=1,
-                           plan_id=2,
+                           plan_id=3,
                            price=2200,
                            extra_tasks=3,
                            extra_users=5,
@@ -434,13 +434,13 @@ def populate_db(mock_client_id: str, session_user_id: str, session_user_auth0_id
                            extra_clients=2)
     save_to_db(plan_extra)
 
-    subscription = SubscriptionDB(subscription_id=1, organization_id=2, plan_id=2)
+    subscription = SubscriptionDB(subscription_id=2, organization_id=2, plan_id=3)
     save_to_db(subscription)
 
-    discount = SubscriptionDiscount(discount_id=1, subscription_id=1, percentage=20)
+    discount = SubscriptionDiscount(discount_id=1, subscription_id=2, percentage=20)
     save_to_db(discount)
 
-    extra = SubscriptionExtra(sub_extra_id=1, subscription_id=1, extra_id=1)
+    extra = SubscriptionExtra(sub_extra_id=1, subscription_id=2, extra_id=1)
     save_to_db(extra)
 
     ###############

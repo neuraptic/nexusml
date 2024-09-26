@@ -106,7 +106,7 @@ DEFAULT_CONFIG = {
             'waitlist': 10**4,  # Maximum number of entries in the wait list.
         },
         'quotas': {
-            'default_plan': {
+            'free_plan': {
                 'max_apps': 3,
                 'max_collaborators': 3,
                 'max_cpu_hours': 0,  # Per billing cycle.

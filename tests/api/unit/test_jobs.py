@@ -49,7 +49,7 @@ class TestBiller:
         # Plans
         empty_table(Plan)
         annual_plan = Plan(
-            plan_id=2,  # 1 is reserved for the Free Plan
+            plan_id=3,  # First two IDs are reserved for default and free plans
             name='Test Annual Plan',
             description='Test Annual Plan Description',
             price=11000,
@@ -65,7 +65,7 @@ class TestBiller:
             max_collaborators=50,
             max_clients=5)
         monthly_plan = Plan(
-            plan_id=3,  # 1 is reserved for the Free Plan
+            plan_id=4,  # First two IDs are reserved for default and free plans
             name='Test Monthly Plan',
             description='Test Monthly Plan Description',
             price=1000,

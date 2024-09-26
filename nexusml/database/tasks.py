@@ -18,6 +18,7 @@ from sqlalchemy.orm import relationship
 
 from nexusml.constants import AL_SERVICE_NAME
 from nexusml.constants import CL_SERVICE_NAME
+from nexusml.constants import FREE_PLAN_ID
 from nexusml.constants import INFERENCE_SERVICE_NAME
 from nexusml.constants import MONITORING_SERVICE_NAME
 from nexusml.constants import TESTING_SERVICE_NAME
@@ -111,16 +112,16 @@ class TaskDB(MutableEntity):
     # Testing AI model
     test_model_id = Column(INTEGER(unsigned=True))  # add Foreign Key later, as `ai_models` table doesn't exist yet
     # Quota limits
-    max_deployments = Column(INTEGER(unsigned=True), nullable=False, default=Plan.default_max_deployments)
-    max_predictions = Column(INTEGER(unsigned=True), nullable=False, default=Plan.default_max_predictions)
+    max_deployments = Column(INTEGER(unsigned=True), nullable=False, default=Plan.free_plan_max_deployments)
+    max_predictions = Column(INTEGER(unsigned=True), nullable=False, default=Plan.free_plan_max_predictions)
     max_gpu_hours = Column(DECIMAL(precision=7, scale=2, asdecimal=False),
                            nullable=False,
-                           default=Plan.default_max_gpu_hours)
+                           default=Plan.free_plan_max_gpu_hours)
     max_cpu_hours = Column(DECIMAL(precision=7, scale=2, asdecimal=False),
                            nullable=False,
-                           default=Plan.default_max_cpu_hours)
-    max_examples = Column(INTEGER(unsigned=True), nullable=False, default=Plan.default_max_examples)
-    space_limit = Column(BIGINT(unsigned=True), nullable=False, default=Plan.default_space_limit)
+                           default=Plan.free_plan_max_cpu_hours)
+    max_examples = Column(INTEGER(unsigned=True), nullable=False, default=Plan.free_plan_max_examples)
+    space_limit = Column(BIGINT(unsigned=True), nullable=False, default=Plan.free_plan_space_limit)
     # Quota usage
     num_deployments = Column(INTEGER(unsigned=True), nullable=False, default=0)
     num_predictions = Column(INTEGER(unsigned=True), nullable=False, default=0)
@@ -223,7 +224,7 @@ class TaskDB(MutableEntity):
             save_to_db(client)
             client.update_api_key(scopes=client_scopes[type_], never_expire=True)
 
-            if get_active_subscription(organization_id=self.organization_id).plan_id == 1:
+            if get_active_subscription(organization_id=self.organization_id).plan_id == FREE_PLAN_ID:
                 status_templates = service_stopped_status
             else:
                 status_templates = service_init_status

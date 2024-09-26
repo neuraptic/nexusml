@@ -8,6 +8,7 @@ from typing import Union
 from nexusml.api.resources import InvalidDataError
 from nexusml.api.resources import UnprocessableRequestError
 from nexusml.api.resources.organizations import get_active_subscription
+from nexusml.constants import FREE_PLAN_ID
 from nexusml.database.services import Service as ServiceDB
 from nexusml.database.tasks import TaskDB
 from nexusml.engine.buffers import Buffer
@@ -28,7 +29,7 @@ def update_service_status(task_db_obj: TaskDB, service_type: ServiceType, status
         InvalidDataError: If the status code is invalid
         UnprocessableRequestError: If the organization is in the Free Plan
     """
-    if get_active_subscription(organization_id=task_db_obj.organization_id).plan_id == 1:
+    if get_active_subscription(organization_id=task_db_obj.organization_id).plan_id == FREE_PLAN_ID:
         raise UnprocessableRequestError('Services are disabled in the Free Plan')
     try:
         new_status = Status.from_dict(status)

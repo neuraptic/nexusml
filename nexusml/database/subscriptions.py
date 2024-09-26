@@ -20,6 +20,12 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import relationship
 
 from nexusml.api.utils import config
+from nexusml.constants import DEFAULT_PLAN_ID
+from nexusml.constants import FREE_PLAN_ID
+from nexusml.constants import MYSQL_BIGINT_MAX_UNSIGNED
+from nexusml.constants import MYSQL_INT_MAX_UNSIGNED
+from nexusml.constants import MYSQL_MEDIUMINT_MAX_UNSIGNED
+from nexusml.constants import MYSQL_SMALLINT_MAX_UNSIGNED
 from nexusml.database.base import DBModel
 from nexusml.database.core import db_query
 from nexusml.database.core import db_rollback
@@ -150,39 +156,39 @@ class Plan(ImmutableEntity):
     __tablename__ = 'plans'
 
     @staticmethod
-    def default_max_tasks() -> int:
-        """Return the default maximum number of tasks."""
-        return config.get('limits')['quotas']['default_plan']['max_tasks']
+    def free_plan_max_tasks() -> int:
+        """Return Free Plan's maximum number of tasks."""
+        return config.get('limits')['quotas']['free_plan']['max_tasks']
 
     @staticmethod
-    def default_max_deployments() -> int:
-        """Return the default maximum number of deployments."""
-        return config.get('limits')['quotas']['default_plan']['max_deployments']
+    def free_plan_max_deployments() -> int:
+        """Return Free Plan's maximum number of deployments."""
+        return config.get('limits')['quotas']['free_plan']['max_deployments']
 
     @staticmethod
-    def default_max_predictions() -> int:
-        """Return the default maximum number of predictions."""
-        return config.get('limits')['quotas']['default_plan']['max_predictions']
+    def free_plan_max_predictions() -> int:
+        """Return Free Plan's maximum number of predictions."""
+        return config.get('limits')['quotas']['free_plan']['max_predictions']
 
     @staticmethod
-    def default_max_examples() -> int:
-        """Return the default maximum number of examples."""
-        return config.get('limits')['quotas']['default_plan']['max_examples']
+    def free_plan_max_examples() -> int:
+        """Return Free Plan's maximum number of examples."""
+        return config.get('limits')['quotas']['free_plan']['max_examples']
 
     @staticmethod
-    def default_max_gpu_hours() -> float:
-        """Return the default maximum number of GPU hours."""
-        return config.get('limits')['quotas']['default_plan']['max_gpu_hours']
+    def free_plan_max_gpu_hours() -> float:
+        """Return Free Plan's maximum number of GPU hours."""
+        return config.get('limits')['quotas']['free_plan']['max_gpu_hours']
 
     @staticmethod
-    def default_max_cpu_hours() -> float:
-        """Return the default maximum number of CPU hours."""
-        return config.get('limits')['quotas']['default_plan']['max_cpu_hours']
+    def free_plan_max_cpu_hours() -> float:
+        """Return Free Plan's maximum number of CPU hours."""
+        return config.get('limits')['quotas']['free_plan']['max_cpu_hours']
 
     @staticmethod
-    def default_space_limit() -> int:
-        """Return the default space limit."""
-        return config.get('limits')['quotas']['default_plan']['space_limit']
+    def free_plan_space_limit() -> int:
+        """Return Free Plan's space limit."""
+        return config.get('limits')['quotas']['free_plan']['space_limit']
 
     plan_id = Column(SMALLINT(unsigned=True), primary_key=True, autoincrement=True)
     name = Column(String(64), nullable=False)
@@ -193,21 +199,21 @@ class Plan(ImmutableEntity):
     billing_cycle = Column(Enum(BillingCycle), nullable=False)
 
     # Quota limits
-    max_tasks = Column(MEDIUMINT(unsigned=True), nullable=False)
+    max_tasks = Column(SMALLINT(unsigned=True), nullable=False)
     max_deployments = Column(MEDIUMINT(unsigned=True), nullable=False)
-    max_predictions = Column(INTEGER(unsigned=True), nullable=False, default=default_max_predictions)
+    max_predictions = Column(INTEGER(unsigned=True), nullable=False, default=free_plan_max_predictions)
     max_gpu_hours = Column(DECIMAL(precision=7, scale=2, asdecimal=False),
                            nullable=False,
-                           default=default_max_gpu_hours)
+                           default=free_plan_max_gpu_hours)
     max_cpu_hours = Column(DECIMAL(precision=7, scale=2, asdecimal=False),
                            nullable=False,
-                           default=default_max_cpu_hours)
-    max_examples = Column(INTEGER(unsigned=True), nullable=False, default=default_max_examples)
-    space_limit = Column(BIGINT(unsigned=True), nullable=False, default=default_space_limit)
-    max_users = Column(MEDIUMINT(unsigned=True), nullable=False)
-    max_roles = Column(MEDIUMINT(unsigned=True), nullable=False)
-    max_collaborators = Column(MEDIUMINT(unsigned=True), nullable=False)
-    max_clients = Column(MEDIUMINT(unsigned=True), nullable=False)
+                           default=free_plan_max_cpu_hours)
+    max_examples = Column(INTEGER(unsigned=True), nullable=False, default=free_plan_max_examples)
+    space_limit = Column(BIGINT(unsigned=True), nullable=False, default=free_plan_space_limit)
+    max_users = Column(SMALLINT(unsigned=True), nullable=False)
+    max_roles = Column(SMALLINT(unsigned=True), nullable=False)
+    max_collaborators = Column(SMALLINT(unsigned=True), nullable=False)
+    max_clients = Column(SMALLINT(unsigned=True), nullable=False)
 
 
 class PlanExtra(ImmutableEntity):
@@ -499,38 +505,53 @@ def get_user_roles_rate_limits(user_id: int) -> Optional[RoleRateLimits]:
 
 
 def create_default_plans():
-    """Create the default plans if they do not already exist.
-
-    This function creates a free plan with predefined quotas if it does not already exist in the database.
-    It rolls back the transaction if there is a unique constraint violation but raises other integrity errors.
-
-    Steps:
-    1. Define the default quotas.
-    2. Attempt to create and save the free plan.
-    3. Rollback if a unique constraint violation occurs.
+    """
+    Creates the default plans if they do not already exist.
 
     Raises:
         IntegrityError: If an integrity error other than a unique constraint violation occurs.
     """
-    _default_quotas = config.get('limits')['quotas']['default_plan']
     try:
-        free_plan = Plan(plan_id=1,
+        # Create the Default Plan with no quota limits
+        default_plan = Plan(plan_id=DEFAULT_PLAN_ID,
+                            name='Default Plan',
+                            description='Default plan with no quota limits',
+                            price=0,
+                            currency=Currency.DOLLAR,
+                            billing_cycle=BillingCycle.MONTHLY,
+                            max_tasks=MYSQL_SMALLINT_MAX_UNSIGNED,
+                            max_deployments=MYSQL_MEDIUMINT_MAX_UNSIGNED,
+                            max_predictions=MYSQL_INT_MAX_UNSIGNED,
+                            max_gpu_hours=99999.99,  # DECIMAL(precision=7, scale=2)
+                            max_cpu_hours=99999.99,  # DECIMAL(precision=7, scale=2)
+                            max_examples=MYSQL_INT_MAX_UNSIGNED,
+                            space_limit=MYSQL_BIGINT_MAX_UNSIGNED,
+                            max_users=MYSQL_SMALLINT_MAX_UNSIGNED,
+                            max_roles=MYSQL_SMALLINT_MAX_UNSIGNED,
+                            max_collaborators=MYSQL_SMALLINT_MAX_UNSIGNED,
+                            max_clients=MYSQL_SMALLINT_MAX_UNSIGNED)
+        save_to_db(default_plan)
+
+        # Create the Free Plan for new organizations
+        _free_plan_quotas = config.get('limits')['quotas']['free_plan']
+
+        free_plan = Plan(plan_id=FREE_PLAN_ID,
                          name='Free Plan',
-                         description='Free plan',
+                         description='Free plan for new organizations',
                          price=0,
                          currency=Currency.DOLLAR,
                          billing_cycle=BillingCycle.MONTHLY,
-                         max_tasks=_default_quotas['max_tasks'],
-                         max_deployments=_default_quotas['max_deployments'],
-                         max_predictions=_default_quotas['max_predictions'],
-                         max_gpu_hours=_default_quotas['max_gpu_hours'],
-                         max_cpu_hours=_default_quotas['max_cpu_hours'],
-                         max_examples=_default_quotas['max_examples'],
-                         space_limit=_default_quotas['space_limit'],
-                         max_users=_default_quotas['max_users'],
-                         max_roles=_default_quotas['max_roles'],
-                         max_collaborators=_default_quotas['max_collaborators'],
-                         max_clients=_default_quotas['max_apps'])
+                         max_tasks=_free_plan_quotas['max_tasks'],
+                         max_deployments=_free_plan_quotas['max_deployments'],
+                         max_predictions=_free_plan_quotas['max_predictions'],
+                         max_gpu_hours=_free_plan_quotas['max_gpu_hours'],
+                         max_cpu_hours=_free_plan_quotas['max_cpu_hours'],
+                         max_examples=_free_plan_quotas['max_examples'],
+                         space_limit=_free_plan_quotas['space_limit'],
+                         max_users=_free_plan_quotas['max_users'],
+                         max_roles=_free_plan_quotas['max_roles'],
+                         max_collaborators=_free_plan_quotas['max_collaborators'],
+                         max_clients=_free_plan_quotas['max_apps'])
         save_to_db(free_plan)
     except IntegrityError as e:
         db_rollback()

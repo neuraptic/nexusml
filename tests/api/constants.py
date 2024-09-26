@@ -63,7 +63,7 @@ TEST_CONFIG = {
             'waitlist': 10**4,
         },
         'quotas': {
-            'default_plan': {
+            'free_plan': {
                 'max_apps': 3,
                 'max_collaborators': 3,
                 'max_cpu_hours': 0,

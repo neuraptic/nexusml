@@ -35,6 +35,7 @@ from nexusml.constants import ENDPOINT_USER_INVITE
 from nexusml.constants import ENDPOINT_USER_PERMISSIONS
 from nexusml.constants import ENDPOINT_USER_ROLES
 from nexusml.constants import ENDPOINT_USERS
+from nexusml.constants import FREE_PLAN_ID
 from nexusml.constants import HTTP_BAD_REQUEST_STATUS_CODE
 from nexusml.constants import HTTP_CONFLICT_STATUS_CODE
 from nexusml.constants import HTTP_DELETE_STATUS_CODE
@@ -125,7 +126,7 @@ class TestOrganizations:
 
         # Check subscription to the Free Plan
         org_id = OrganizationDB.get_from_uuid(res_json['uuid']).organization_id
-        org_subscriptions = SubscriptionDB.query().filter_by(plan_id=1, organization_id=org_id).all()
+        org_subscriptions = SubscriptionDB.query().filter_by(plan_id=FREE_PLAN_ID, organization_id=org_id).all()
         assert len(org_subscriptions) == 1
         org_subscription = org_subscriptions[0]
         assert org_subscription.num_tasks == 0
