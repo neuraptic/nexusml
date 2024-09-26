@@ -39,7 +39,6 @@ from nexusml.api.utils import API_DOMAIN
 from nexusml.api.utils import config
 from nexusml.api.views import organizations as organizations_views
 from nexusml.constants import CONFIG_FILE
-from nexusml.constants import DEFAULT_API_KEY_FILE
 from nexusml.database.organizations import client_scopes
 from nexusml.enums import FileStorageBackend
 from nexusml.env import ENV_AUTH0_JWKS
@@ -122,7 +121,6 @@ def backend() -> Backend:
     # Delete the files related to the backend
     try:
         os.remove(CONFIG_FILE)
-        os.remove(DEFAULT_API_KEY_FILE)
     except FileNotFoundError:
         pass
 

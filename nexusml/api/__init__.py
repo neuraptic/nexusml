@@ -6,6 +6,7 @@ import warnings
 from apispec import APISpec
 from apispec.ext.marshmallow import MarshmallowPlugin
 from flask import Flask
+from flask import jsonify
 from flask import redirect
 from flask_apispec import FlaskApiSpec
 from webargs.flaskparser import abort
@@ -30,14 +31,17 @@ from nexusml.constants import CONFIG_FILE
 from nexusml.constants import DEFAULT_CELERY_BROKER_URL
 from nexusml.constants import DEFAULT_CELERY_RESULT_BACKEND
 from nexusml.constants import DEFAULT_PLAN_ID
+from nexusml.constants import ENDPOINT_DEFAULT_API_KEY
 from nexusml.constants import SWAGGER_UI_URL
 from nexusml.constants import SWAGGER_URL
 from nexusml.database.core import create_tables
 from nexusml.database.core import db
 from nexusml.database.core import save_to_db
+from nexusml.database.organizations import ClientDB
 from nexusml.database.organizations import create_default_admin_and_maintainer_roles
 from nexusml.database.organizations import create_default_organization
 from nexusml.database.organizations import create_known_clients_and_reserved_clients
+from nexusml.database.organizations import KNOWN_CLIENT_IDS
 from nexusml.database.subscriptions import create_default_plans
 from nexusml.database.subscriptions import SubscriptionDB
 from nexusml.env import ENV_API_DOMAIN
@@ -292,9 +296,36 @@ def _set_celery_config(app):
 def _set_routes(app: Flask):
     api_url = config.get('server')['api_url']
 
+    ##############
+    # Basic URLs #
+    ##############
+
     @app.route('/')
     def index():
         return redirect(api_url + SWAGGER_UI_URL)
+
+    @app.route(api_url)
+    def api_index():
+        return redirect(api_url + SWAGGER_UI_URL)
+
+    if config.get('general')['default_api_key_enabled']:
+        # Endpoint for getting the default API key (if enabled)
+        @app.route(api_url + ENDPOINT_DEFAULT_API_KEY, methods=['GET'])
+        def get_default_api_key():
+            # Get the default client's API key (i.e., the default API key)
+            default_client_id = KNOWN_CLIENT_IDS['default']
+            default_api_key_enabled = config.get('general')['default_api_key_enabled']
+            default_api_key = ClientDB.get(client_id=default_client_id).api_key if default_api_key_enabled else None
+            # Return the default API key
+            response_json = {
+                'enabled': default_api_key_enabled,
+                'default_api_key': default_api_key
+            }
+            return jsonify(response_json)
+
+    #################
+    # API endpoints #
+    #################
 
     routes.register_myaccount_endpoints(app=app)
     routes.register_organizations_endpoints(app=app)

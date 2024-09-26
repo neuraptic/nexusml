@@ -28,7 +28,6 @@ from nexusml.api.utils import config
 from nexusml.constants import ADMIN_ROLE
 from nexusml.constants import API_NAME
 from nexusml.constants import API_VERSION
-from nexusml.constants import DEFAULT_API_KEY_FILE
 from nexusml.constants import MAINTAINER_ROLE
 from nexusml.constants import NUM_RESERVED_CLIENTS
 from nexusml.database.base import BinaryUUID
@@ -507,13 +506,6 @@ def create_known_clients_and_reserved_clients():
                               name='Default Client',
                               description='Default client for testing purposes')
     _save_if_not_exist(default_client)
-
-    # Save the default client's API key to a file for later use
-    if config.get('general')['default_api_key_enabled']:
-        if not os.path.isfile(DEFAULT_API_KEY_FILE):
-            with open(DEFAULT_API_KEY_FILE, 'w') as f:
-                f.write(default_client.api_key)
-        print(f'Default API key for testing purposes saved to: {os.path.abspath(DEFAULT_API_KEY_FILE)}')
 
     # Create NexusML Web App
     web_app = ClientDB(client_id=KNOWN_CLIENT_IDS['web'],
