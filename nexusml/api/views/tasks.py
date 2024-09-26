@@ -81,7 +81,7 @@ from nexusml.statuses import testing_waiting_status
 # Define views #
 ################
 
-_TasksView = create_view(reject_api_keys=['POST'])
+_TasksView = create_view()
 _TaskView = create_view(resource_types=[Task], permission_management=True, swagger_tags=[SWAGGER_TAG_TASKS])
 _InputElementView = create_view(resource_types=[Task, InputElement])
 _OutputElementView = create_view(resource_types=[Task, OutputElement])
