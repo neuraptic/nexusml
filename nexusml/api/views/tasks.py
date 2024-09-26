@@ -263,16 +263,12 @@ class TasksView(_TasksView):
         # Merge user-accessible and role-accessible tasks
         return _return_tasks(session_agent=session_agent, db_objects=user_accessible.union(role_accessible))
 
-    @doc(tags=[SWAGGER_TAG_TASKS], description='Note: only available to admins and maintainers')
+    @doc(tags=[SWAGGER_TAG_TASKS])
     @use_kwargs(TaskPOSTRequest, location='json')
     @marshal_with(TaskResponse)
     def post(self, **kwargs) -> Response:
         """
-        Creates a new task. This operation is available only to users with admin or maintainer roles.
-
-        Steps:
-        1. Validate the session user's roles against required roles (admin, maintainer).
-        2. Process the request and create the task using the provided JSON data.
+        Creates a new task.
 
         Args:
             kwargs: The task creation data sent in the request body.
@@ -283,13 +279,6 @@ class TasksView(_TasksView):
         Raises:
             PermissionDeniedError: If the session user does not have the required roles.
         """
-        # Check session user roles
-        # Note: don't use `views.core.roles_required` decorator as it requires a parent organization
-        session_user_roles = get_user_roles(user=agent_from_token())
-        required_roles = [ADMIN_ROLE, MAINTAINER_ROLE]
-        if not any(x in session_user_roles for x in required_roles):
-            raise PermissionDeniedError()
-        # Create task
         return process_post_or_put_request(agent=agent_from_token(), resource_or_model=Task, json=kwargs)
 
 
