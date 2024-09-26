@@ -115,9 +115,11 @@ class TestAPIKey:
         client = ClientDB.get(client_id=_CLIENT_ID)
         api_url = API_DOMAIN + config.get('server')['api_url']
         api_key = generate_api_key()
+
         ##############
         # My Account #
         ##############
+
         # DELETE|GET /myaccount
         myaccount_url = api_url + ENDPOINT_MYACCOUNT
         _test_method(method='DELETE', url=myaccount_url, api_key=api_key)
@@ -163,14 +165,10 @@ class TestAPIKey:
         new_settings = {'param_1': 'value_1'}
         _test_method(method='GET', url=myapp_url, api_key=api_key)
         _test_method(method='PUT', url=myapp_url, api_key=api_key, json=new_settings)
-        ####################################
-        # Organizations (write operations) #
-        ####################################
-        org = OrganizationDB.get(organization_id=client.organization_id)
-        org_url = api_url + ENDPOINT_ORGANIZATIONS + '/' + str(org.uuid)
-        clients_url = (api_url + ENDPOINT_CLIENTS.replace('<organization_id>', str(org.uuid)))
-        client_url = clients_url + '/' + str(client.uuid)
-        perm_json = {'resource_type': 'tasks', 'action': 'create', 'allow': True}
+
+        #################
+        # Organizations #
+        #################
 
         # POST /organizations
         orgs_url = api_url + ENDPOINT_ORGANIZATIONS
@@ -178,131 +176,6 @@ class TestAPIKey:
         delete_from_db(session_user)
         new_org = {'trn': 'test_trn', 'name': 'test_name', 'domain': 'org2.com', 'address': 'test_address'}
         _test_method(method='POST', url=orgs_url, api_key=api_key, json=new_org)
-
-        # DELETE /<organization_id>
-        _test_method(method='DELETE', url=org_url, api_key=api_key)
-
-        # PUT /<organization_id>
-        modified_org = {
-            'trn': 'modified_test_trn',
-            'name': 'modified_test_name',
-            'domain': 'modifiedorg2.com',
-            'address': 'modified_test_address'
-        }
-        _test_method(method='PUT', url=org_url, api_key=api_key, json=modified_org)
-        ###################################
-        # Subscription (write operations) #
-        ###################################
-        # DELETE /<organization_id>/subscription
-        pass  # TODO: implement it only if the endpoint is eventually implemented
-
-        # PUT /<organization_id>/subscription
-        pass  # TODO: implement it only if the endpoint is eventually implemented
-        ############################
-        # Users (write operations) #
-        ############################
-
-        # POST /<organization_id>/users/invite
-        user_invite_url = (api_url + ENDPOINT_USER_INVITE.replace('<organization_id>', str(org.uuid)))
-        account_email = os.environ[ENV_NOTIFICATION_EMAIL]
-        org.domain = account_email.split('@')[-1]
-        save_to_db(org)
-        invite_json = {'email': account_email}
-        _test_method(method='POST', url=user_invite_url, api_key=api_key, json=invite_json)
-
-        # DELETE /<organization_id>/users/<user_id>
-        user = UserDB.query().filter_by(organization_id=org.organization_id).first()
-        user_url = (api_url +
-                    ENDPOINT_USER.replace('<organization_id>', str(org.uuid)).replace('<user_id>', str(user.uuid)))
-        _test_method(method='DELETE', url=user_url, api_key=api_key)
-
-        # DELETE /<organization_id>/users/<user_id>/permissions
-        user_perms_url = user_url + '/permissions'
-        _test_method(method='DELETE', url=user_perms_url, api_key=api_key)
-
-        # POST /<organization_id>/users/<user_id>/permissions
-        _test_method(method='POST', url=user_perms_url, api_key=api_key, json=perm_json)
-
-        # DELETE /<organization_id>/users/<user_id>/roles
-        user_roles_url = user_url + '/roles'
-        _test_method(method='DELETE', url=user_roles_url, api_key=api_key)
-
-        # POST /<organization_id>/users/<user_id>/roles
-        role_json = {'roles': ['dasci', 'devs']}
-        _test_method(method='POST', url=user_roles_url, api_key=api_key, json=role_json)
-
-        # DELETE /<organization_id>/users/<user_id>/roles/<role_id>
-        role = RoleDB.query().filter_by(name='dasci').first()
-        user_role_url = user_url + '/roles/' + str(role.uuid)
-        _test_method(method='DELETE', url=user_role_url, api_key=api_key)
-        ############################
-        # Roles (write operations) #
-        ############################
-        # POST /<organization_id>/roles
-        roles_url = (api_url + ENDPOINT_ROLES.replace('<organization_id>', str(org.uuid)))
-        new_role = {'name': 'New Test Role', 'description': 'New test role description'}
-        _test_method(method='POST', url=roles_url, api_key=api_key, json=new_role)
-
-        # DELETE /<organization_id>/roles/<role_id>
-        role = RoleDB.query().filter_by(organization_id=org.organization_id).first()
-        role_url = (api_url +
-                    ENDPOINT_ROLE.replace('<organization_id>', str(org.uuid)).replace('<role_id>', str(role.uuid)))
-        _test_method(method='DELETE', url=role_url, api_key=api_key)
-
-        # PUT /<organization_id>/roles/<role_id>
-        modified_role = {'name': 'Modified Test Role', 'description': 'Modified test role description'}
-        _test_method(method='PUT', url=role_url, api_key=api_key, json=modified_role)
-
-        # DELETE /<organization_id>/roles/<role_id>/permissions
-        role_perms_url = role_url + '/permissions'
-        _test_method(method='DELETE', url=role_perms_url, api_key=api_key)
-
-        # POST /<organization_id>/roles/<role_id>/permissions
-        _test_method(method='POST', url=role_perms_url, api_key=api_key, json=perm_json)
-        ####################################
-        # Collaborators (write operations) #
-        ####################################
-        # POST /<organization_id>/collaborators
-        collaborators_url = (api_url + ENDPOINT_COLLABORATORS.replace('<organization_id>', str(org.uuid)))
-        new_collaborator = {'email': 'user_8@org3.com'}
-        _test_method(method='POST', url=collaborators_url, api_key=api_key, json=new_collaborator)
-
-        # DELETE /<organization_id>/collaborators/<collaborator_id>
-        collaborator = CollaboratorDB.query().filter_by(organization_id=org.organization_id).first()
-        collaborator_url = (api_url + ENDPOINT_COLLABORATOR.replace('<organization_id>', str(org.uuid)).replace(
-            '<collaborator_id>', str(collaborator.uuid)))
-        _test_method(method='DELETE', url=collaborator_url, api_key=api_key)
-
-        # DELETE /<organization_id>/collaborators/<collaborator_id>/permissions
-        collaborator_perms_url = collaborator_url + '/permissions'
-        _test_method(method='DELETE', url=collaborator_perms_url, api_key=api_key)
-
-        # POST /<organization_id>/collaborators/<collaborator_id>/permissions
-        _test_method(method='POST', url=collaborator_perms_url, api_key=api_key, json=perm_json)
-        #####################################
-        # Clients (apps) (write operations) #
-        #####################################
-        # POST /<organization_id>/apps
-        new_app = {
-            'name': 'New Test Client',
-            'description': 'New test client description',
-        }
-        _test_method(method='POST', url=clients_url, api_key=api_key, json=new_app)
-
-        # DELETE /<organization_id>/apps/<client_id>
-        _test_method(method='DELETE', url=client_url, api_key=api_key)
-
-        # PUT /<organization_id>/apps/<client_id>
-        modified_app = {
-            'name': 'Modified Test Client',
-            'description': 'Modified test client description',
-        }
-        _test_method(method='PUT', url=client_url, api_key=api_key, json=modified_app)
-
-        # PUT /<organization_id>/apps/<client_id>/api-key
-        api_key_url = client_url + '/api-key'
-        new_api_key = {'scopes': ['tasks.read', 'files.create', 'models.read', 'examples.read']}
-        _test_method(method='PUT', url=api_key_url, api_key=api_key, json=new_api_key)
 
 
 def generate_api_key(scopes: List[str] = None, expire_at: datetime = None) -> str:

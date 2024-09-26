@@ -120,20 +120,20 @@ from nexusml.utils import s3_client
 # Define views #
 ################
 
-_no_api_keys_write = {'reject_api_keys': ['DELETE', 'POST', 'PUT']}  # reject write operations for API keys
-
 _OrganizationsView = create_view(resource_types=[Organization], load_resources=False, reject_api_keys=['POST'])
-_OrganizationView = create_view(resource_types=[Organization], reject_api_keys=['DELETE', 'PUT'])
-_SubscriptionView = create_view(resource_types=[Organization], reject_api_keys=['DELETE', 'PUT'])
-_UserView = create_view(resource_types=[Organization, User], **_no_api_keys_write)
-_UserRoleView = create_view(resource_types=[Organization, User], load_resources=False, **_no_api_keys_write)
-_UserInviteView = create_view(resource_types=[Organization], reject_api_keys=['POST'])
-_RoleView = create_view(resource_types=[Organization, Role], **_no_api_keys_write)
-_CollaboratorView = create_view(resource_types=[Organization, Collaborator], **_no_api_keys_write)
-_ClientView = create_view(resource_types=[Organization, Client], **_no_api_keys_write)
-"""
-Organizations
-"""
+_OrganizationView = create_view(resource_types=[Organization], reject_api_keys=['DELETE'])
+_SubscriptionView = create_view(resource_types=[Organization])
+_UserView = create_view(resource_types=[Organization, User])
+_UserRoleView = create_view(resource_types=[Organization, User], load_resources=False)
+_UserInviteView = create_view(resource_types=[Organization])
+_RoleView = create_view(resource_types=[Organization, Role])
+_CollaboratorView = create_view(resource_types=[Organization, Collaborator])
+_ClientView = create_view(resource_types=[Organization, Client])
+
+
+#################
+# Organizations #
+#################
 
 
 def _update_task_copy_progress(task: TaskDB, progress: int):
@@ -347,7 +347,7 @@ class OrganizationsView(_OrganizationsView):
         and optionally copies demo tasks.
 
         Args:
-            user_uuid (str): UUID of the user creating the organization.
+            user_auth0_id (str): Auth0 ID of the user creating the organization.
             org_db_object (OrganizationDB): The organization database object.
             copy_demo_tasks (bool): Whether to copy demo tasks for the organization.
 
@@ -422,10 +422,6 @@ class OrganizationsView(_OrganizationsView):
         Returns:
             Response: The response with the organization details and appropriate status code.
         """
-        # Only users can create organizations
-        if g.token_type != 'auth0_token':
-            raise PermissionDeniedError('Only users can create organizations')
-
         # Check the number of organizations created so far. If the limit is reached, add user to the wait list.
         max_num_orgs = config.get('limits')['organizations']['num_organizations']
         if OrganizationDB.query().count() >= max_num_orgs:
