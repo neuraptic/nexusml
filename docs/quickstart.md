@@ -271,13 +271,12 @@ You can use NexusML in two ways:
 
 If you are not running the RESTful API server in production, you can use the default API key to access the API. This 
 API key allows you to access the API without authentication, avoiding the need to set up Auth0. To get the default 
-API key, either copy the message shown by the `nexusml-server` command at startup or open the `default_api_key.txt` 
-file located in the `nexusml` package directory.
+API key, make a request to the `GET /v0/default-api-key` endpoint.
 
 > ⚠️ **Warning:** Make sure that the default API key is not enabled in production.
 
-It is important to make sure that the default API key is not enabled in production. To disable the default API key, 
-update the following line in the `config.yaml` file located in the `nexusml` package directory:
+It is important to make sure that the default API key is not enabled in production. To disable it, update the following 
+line in the `config.yaml` file located in the `nexusml` package directory:
 
 ```yaml
 general:
