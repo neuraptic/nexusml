@@ -1,5 +1,4 @@
 from datetime import datetime
-import os
 from typing import List
 
 import pytest
@@ -9,9 +8,6 @@ from nexusml.api.resources.tasks import Task
 from nexusml.api.utils import API_DOMAIN
 from nexusml.api.utils import config
 from nexusml.api.views.core import AUTH0_REQUIRED_ERR_MSG
-from nexusml.constants import ENDPOINT_CLIENTS
-from nexusml.constants import ENDPOINT_COLLABORATOR
-from nexusml.constants import ENDPOINT_COLLABORATORS
 from nexusml.constants import ENDPOINT_EXAMPLE
 from nexusml.constants import ENDPOINT_MYACCOUNT
 from nexusml.constants import ENDPOINT_MYACCOUNT_CLIENT_SETTINGS
@@ -20,29 +16,20 @@ from nexusml.constants import ENDPOINT_MYACCOUNT_ORGANIZATION
 from nexusml.constants import ENDPOINT_MYACCOUNT_PERMISSIONS
 from nexusml.constants import ENDPOINT_MYACCOUNT_SETTINGS
 from nexusml.constants import ENDPOINT_ORGANIZATIONS
-from nexusml.constants import ENDPOINT_ROLE
-from nexusml.constants import ENDPOINT_ROLES
 from nexusml.constants import ENDPOINT_TASK
 from nexusml.constants import ENDPOINT_TASKS
-from nexusml.constants import ENDPOINT_USER
-from nexusml.constants import ENDPOINT_USER_INVITE
 from nexusml.constants import HTTP_DELETE_STATUS_CODE
 from nexusml.constants import HTTP_FORBIDDEN_STATUS_CODE
 from nexusml.constants import HTTP_GET_STATUS_CODE
 from nexusml.constants import HTTP_POST_STATUS_CODE
 from nexusml.constants import NUM_RESERVED_CLIENTS
-from nexusml.database.core import delete_from_db
 from nexusml.database.core import save_to_db
 from nexusml.database.notifications import NotificationDB
 from nexusml.database.organizations import ClientDB
-from nexusml.database.organizations import CollaboratorDB
 from nexusml.database.organizations import OrganizationDB
-from nexusml.database.organizations import RoleDB
-from nexusml.database.organizations import UserDB
 from nexusml.database.tasks import TaskDB
 from nexusml.enums import NotificationEvent
 from nexusml.enums import NotificationSource
-from nexusml.env import ENV_NOTIFICATION_EMAIL
 from tests.api.integration.utils import get_endpoint
 from tests.api.integration.utils import mock_element_values_json
 from tests.api.integration.utils import send_request
