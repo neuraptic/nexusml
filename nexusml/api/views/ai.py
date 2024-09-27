@@ -266,12 +266,6 @@ def trigger_pending_test_predictions(task_id: int, max_attempts: int = 6):
     if ai_model is None:
         return
 
-    ai_model_arn = task.db_object().test_model_arn
-    ai_model_ip_addr = task.db_object().test_model_ip_addr
-
-    if not (ai_model_arn or ai_model_ip_addr):
-        raise RuntimeError('Corrupted AI model')
-
     # Preload task elements
     preloaded_elements = preload_task_db_objects(task=task.db_object(), db_model=ElementDB)
 
