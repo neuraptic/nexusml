@@ -4,14 +4,37 @@ from typing import Iterable, List, Type, Union
 
 from sqlalchemy import text as sql_text
 from sqlalchemy.engine import Row
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.sql.elements import TextClause
 
 from nexusml.api.utils import camel_to_snake
 from nexusml.database.base import DBModel
 from nexusml.database.base import Entity
+from nexusml.database.core import db_rollback
 from nexusml.database.core import save_to_db
 from nexusml.statuses import Status
 from nexusml.statuses import status_group_prefixes
+
+
+def save_or_ignore_duplicate(db_object: DBModel) -> bool:
+    """
+    Saves a database object to the database, ignoring any IntegrityError exceptions
+    that may be raised due to duplicate entries.
+
+    Args:
+        db_object (DBModel): The database object to save.
+
+    Returns:
+        bool: True if the object was saved successfully, False if it was discarded due to an IntegrityError.
+    """
+    try:
+        save_to_db(db_object)
+        return True
+    except IntegrityError as e:
+        db_rollback()
+        if e.orig.args[0] != 1062:
+            raise e
+        return False
 
 
 def get_children(parent_object: DBModel, child_model: Type[DBModel]) -> List[Type[DBModel]]:

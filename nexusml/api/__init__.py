@@ -36,7 +36,6 @@ from nexusml.constants import SWAGGER_UI_URL
 from nexusml.constants import SWAGGER_URL
 from nexusml.database.core import create_tables
 from nexusml.database.core import db
-from nexusml.database.core import save_to_db
 from nexusml.database.organizations import ClientDB
 from nexusml.database.organizations import create_default_admin_and_maintainer_roles
 from nexusml.database.organizations import create_default_organization
@@ -44,6 +43,7 @@ from nexusml.database.organizations import create_known_clients_and_reserved_cli
 from nexusml.database.organizations import KNOWN_CLIENT_IDS
 from nexusml.database.subscriptions import create_default_plans
 from nexusml.database.subscriptions import SubscriptionDB
+from nexusml.database.utils import save_or_ignore_duplicate
 from nexusml.env import ENV_API_DOMAIN
 from nexusml.env import ENV_AUTH0_CLIENT_ID
 from nexusml.env import ENV_AUTH0_CLIENT_SECRET
@@ -388,4 +388,4 @@ def _setup_database(app):
 
         # Subscribe the default organization to the default plan
         subscription = SubscriptionDB(subscription_id=1, organization_id=1, plan_id=DEFAULT_PLAN_ID)
-        save_to_db(subscription)
+        save_or_ignore_duplicate(subscription)

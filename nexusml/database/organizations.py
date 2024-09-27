@@ -37,6 +37,7 @@ from nexusml.database.core import db
 from nexusml.database.core import db_commit
 from nexusml.database.core import db_rollback
 from nexusml.database.core import save_to_db
+from nexusml.database.utils import save_or_ignore_duplicate
 from nexusml.enums import InviteStatus
 from nexusml.env import ENV_WEB_CLIENT_ID
 
@@ -490,22 +491,12 @@ KNOWN_CLIENT_UUIDS = {
 
 
 def create_known_clients_and_reserved_clients():
-    def _save_if_not_exist(db_object: DBModel) -> bool:
-        try:
-            save_to_db(db_object)
-            return True
-        except IntegrityError as e:
-            if e.orig.args[0] != 1062:
-                raise e
-            db_rollback()
-            return False
-
     # Create the default client for testing purposes
     default_client = ClientDB(client_id=KNOWN_CLIENT_IDS['default'],
                               organization_id=1,
                               name='Default Client',
                               description='Default client for testing purposes')
-    _save_if_not_exist(default_client)
+    save_or_ignore_duplicate(default_client)
 
     # Create NexusML Web App
     web_app = ClientDB(client_id=KNOWN_CLIENT_IDS['web'],
@@ -513,7 +504,7 @@ def create_known_clients_and_reserved_clients():
                        auth0_id=KNOWN_CLIENT_UUIDS['web'],
                        name='NexusML Web App',
                        description='Interactive web application')
-    saved = _save_if_not_exist(web_app)
+    saved = save_or_ignore_duplicate(web_app)
     if saved:
         web_app.update_api_key(expire_at=(datetime.utcnow() + timedelta(seconds=1)))  # disable API keys in the Web App
 
@@ -523,7 +514,7 @@ def create_known_clients_and_reserved_clients():
         for x in range(max(KNOWN_CLIENT_IDS.values()) + 2, NUM_RESERVED_CLIENTS + 2)
     ]
     for reserved_client in reserved_clients:
-        saved = _save_if_not_exist(reserved_client)
+        saved = save_or_ignore_duplicate(reserved_client)
         if saved:
             reserved_client.update_api_key(expire_at=(datetime.utcnow() + timedelta(seconds=1)))  # disable API keys
 

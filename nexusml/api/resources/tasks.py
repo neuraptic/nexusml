@@ -300,6 +300,7 @@ class Element(_TaskSchemaResource, ABC):
                 else:
                     raise InvalidDataError()
             if '(pymysql.err.IntegrityError) (1062, "Duplicate entry' in str(e):
+                # TODO: why is this exception not being raised as an `IntegrityError`?
                 raise DuplicateResourceError(duplicate_rsrc_msg)
             raise e
 

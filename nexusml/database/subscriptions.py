@@ -37,6 +37,7 @@ from nexusml.database.organizations import OrganizationER
 from nexusml.database.organizations import RoleDB
 from nexusml.database.organizations import user_roles
 from nexusml.database.organizations import UserDB
+from nexusml.database.utils import save_or_ignore_duplicate
 from nexusml.enums import BillingCycle
 from nexusml.enums import Currency
 
@@ -511,49 +512,46 @@ def create_default_plans():
     Raises:
         IntegrityError: If an integrity error other than a unique constraint violation occurs.
     """
-    try:
-        # Create the Default Plan with no quota limits
-        default_plan = Plan(plan_id=DEFAULT_PLAN_ID,
-                            name='Default Plan',
-                            description='Default plan with no quota limits',
-                            price=0,
-                            currency=Currency.DOLLAR,
-                            billing_cycle=BillingCycle.MONTHLY,
-                            max_tasks=MYSQL_SMALLINT_MAX_UNSIGNED,
-                            max_deployments=MYSQL_MEDIUMINT_MAX_UNSIGNED,
-                            max_predictions=MYSQL_INT_MAX_UNSIGNED,
-                            max_gpu_hours=99999.99,  # DECIMAL(precision=7, scale=2)
-                            max_cpu_hours=99999.99,  # DECIMAL(precision=7, scale=2)
-                            max_examples=MYSQL_INT_MAX_UNSIGNED,
-                            space_limit=MYSQL_BIGINT_MAX_UNSIGNED,
-                            max_users=MYSQL_SMALLINT_MAX_UNSIGNED,
-                            max_roles=MYSQL_SMALLINT_MAX_UNSIGNED,
-                            max_collaborators=MYSQL_SMALLINT_MAX_UNSIGNED,
-                            max_clients=MYSQL_SMALLINT_MAX_UNSIGNED)
-        save_to_db(default_plan)
+    # Create the Default Plan with no quota limits
+    default_plan = Plan(plan_id=DEFAULT_PLAN_ID,
+                        name='Default Plan',
+                        description='Default plan with no quota limits',
+                        price=0,
+                        currency=Currency.DOLLAR,
+                        billing_cycle=BillingCycle.MONTHLY,
+                        max_tasks=MYSQL_SMALLINT_MAX_UNSIGNED,
+                        max_deployments=MYSQL_MEDIUMINT_MAX_UNSIGNED,
+                        max_predictions=MYSQL_INT_MAX_UNSIGNED,
+                        max_gpu_hours=99999.99,  # DECIMAL(precision=7, scale=2)
+                        max_cpu_hours=99999.99,  # DECIMAL(precision=7, scale=2)
+                        max_examples=MYSQL_INT_MAX_UNSIGNED,
+                        space_limit=MYSQL_BIGINT_MAX_UNSIGNED,
+                        max_users=MYSQL_SMALLINT_MAX_UNSIGNED,
+                        max_roles=MYSQL_SMALLINT_MAX_UNSIGNED,
+                        max_collaborators=MYSQL_SMALLINT_MAX_UNSIGNED,
+                        max_clients=MYSQL_SMALLINT_MAX_UNSIGNED)
 
-        # Create the Free Plan for new organizations
-        _free_plan_quotas = config.get('limits')['quotas']['free_plan']
+    save_or_ignore_duplicate(default_plan)
 
-        free_plan = Plan(plan_id=FREE_PLAN_ID,
-                         name='Free Plan',
-                         description='Free plan for new organizations',
-                         price=0,
-                         currency=Currency.DOLLAR,
-                         billing_cycle=BillingCycle.MONTHLY,
-                         max_tasks=_free_plan_quotas['max_tasks'],
-                         max_deployments=_free_plan_quotas['max_deployments'],
-                         max_predictions=_free_plan_quotas['max_predictions'],
-                         max_gpu_hours=_free_plan_quotas['max_gpu_hours'],
-                         max_cpu_hours=_free_plan_quotas['max_cpu_hours'],
-                         max_examples=_free_plan_quotas['max_examples'],
-                         space_limit=_free_plan_quotas['space_limit'],
-                         max_users=_free_plan_quotas['max_users'],
-                         max_roles=_free_plan_quotas['max_roles'],
-                         max_collaborators=_free_plan_quotas['max_collaborators'],
-                         max_clients=_free_plan_quotas['max_apps'])
-        save_to_db(free_plan)
-    except IntegrityError as e:
-        db_rollback()
-        if e.orig.args[0] != 1062:
-            raise e
+    # Create the Free Plan for new organizations
+    _free_plan_quotas = config.get('limits')['quotas']['free_plan']
+
+    free_plan = Plan(plan_id=FREE_PLAN_ID,
+                     name='Free Plan',
+                     description='Free plan for new organizations',
+                     price=0,
+                     currency=Currency.DOLLAR,
+                     billing_cycle=BillingCycle.MONTHLY,
+                     max_tasks=_free_plan_quotas['max_tasks'],
+                     max_deployments=_free_plan_quotas['max_deployments'],
+                     max_predictions=_free_plan_quotas['max_predictions'],
+                     max_gpu_hours=_free_plan_quotas['max_gpu_hours'],
+                     max_cpu_hours=_free_plan_quotas['max_cpu_hours'],
+                     max_examples=_free_plan_quotas['max_examples'],
+                     space_limit=_free_plan_quotas['space_limit'],
+                     max_users=_free_plan_quotas['max_users'],
+                     max_roles=_free_plan_quotas['max_roles'],
+                     max_collaborators=_free_plan_quotas['max_collaborators'],
+                     max_clients=_free_plan_quotas['max_apps'])
+
+    save_or_ignore_duplicate(free_plan)
