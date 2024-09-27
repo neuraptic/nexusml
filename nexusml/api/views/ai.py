@@ -55,6 +55,7 @@ from nexusml.constants import REDIS_PREDICTION_LOG_BUFFER_KEY
 from nexusml.constants import SWAGGER_TAG_AI
 from nexusml.database.ai import AIModelDB
 from nexusml.database.ai import PredictionDB
+from nexusml.database.ai import PredScores
 from nexusml.database.core import db_commit
 from nexusml.database.core import db_query
 from nexusml.database.core import save_to_db
@@ -70,6 +71,7 @@ from nexusml.engine.buffers import MonBufferIO
 from nexusml.engine.workers import get_engine
 from nexusml.enums import AIEnvironment
 from nexusml.enums import ElementType
+from nexusml.enums import ElementValueType
 from nexusml.enums import PredictionState
 from nexusml.enums import ResourceAction
 from nexusml.enums import ServiceType
@@ -315,8 +317,8 @@ def trigger_pending_test_predictions(task_id: int, max_attempts: int = 6):
             # Set output values
             for element_values in predicted_values_json['outputs']:
                 # Get element
-                element = get_preloaded_db_object(id_=element_values['element'],
-                                                  preloaded_db_objects=preloaded_elements)
+                element: ElementDB = get_preloaded_db_object(id_=element_values['element'],
+                                                             preloaded_db_objects=preloaded_elements)
                 if element.element_type != ElementType.OUTPUT:
                     continue  # This should never happen
 
@@ -325,7 +327,12 @@ def trigger_pending_test_predictions(task_id: int, max_attempts: int = 6):
                 if not isinstance(predicted_values, list):
                     predicted_values = [predicted_values]
                 for idx, predicted_value in enumerate(predicted_values):
-                    output_value_db_model = PredictionDB.value_type_models()[element.value_type]
+                    is_pred_score = (element.element_type == ElementType.OUTPUT and
+                                     element.value_type == ElementValueType.CATEGORY)
+                    if is_pred_score:
+                        output_value_db_model = PredScores
+                    else:
+                        output_value_db_model = PredictionDB.value_type_models()[element.value_type]
                     predicted_value_db_obj = output_value_db_model(prediction_id=prediction.prediction_id,
                                                                    element_id=element.element_id,
                                                                    index=(idx + 1),
