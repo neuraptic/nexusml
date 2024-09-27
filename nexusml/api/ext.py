@@ -76,7 +76,7 @@ class Cache(FlaskCache):
 ######################################
 
 cache = Cache(config={'CACHE_TYPE': 'SimpleCache'})  # WARNING: `SimpleCache` is not thread safe
-celery = Celery(include=['nexusml.api.jobs'])
+celery = Celery(include=['nexusml.api.jobs.periodic_jobs', 'nexusml.api.jobs.event_jobs'])
 cors = CORS()  # TODO: add allowed origin URIs to be more restrictive
 docs = FlaskApiSpec()
 mail = Mail()
