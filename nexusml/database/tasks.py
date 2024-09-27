@@ -5,6 +5,7 @@ from sqlalchemy import Column
 from sqlalchemy import DateTime
 from sqlalchemy import DECIMAL
 from sqlalchemy import Enum
+from sqlalchemy import event
 from sqlalchemy import ForeignKey
 from sqlalchemy import JSON
 from sqlalchemy import String
@@ -15,6 +16,7 @@ from sqlalchemy.dialects.mysql import INTEGER
 from sqlalchemy.dialects.mysql import MEDIUMINT
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import relationship
+from sqlalchemy.orm import Session
 
 from nexusml.constants import AL_SERVICE_NAME
 from nexusml.constants import CL_SERVICE_NAME
@@ -112,16 +114,12 @@ class TaskDB(MutableEntity):
     # Testing AI model
     test_model_id = Column(INTEGER(unsigned=True))  # add Foreign Key later, as `ai_models` table doesn't exist yet
     # Quota limits
-    max_deployments = Column(INTEGER(unsigned=True), nullable=False, default=Plan.free_plan_max_deployments)
-    max_predictions = Column(INTEGER(unsigned=True), nullable=False, default=Plan.free_plan_max_predictions)
-    max_gpu_hours = Column(DECIMAL(precision=7, scale=2, asdecimal=False),
-                           nullable=False,
-                           default=Plan.free_plan_max_gpu_hours)
-    max_cpu_hours = Column(DECIMAL(precision=7, scale=2, asdecimal=False),
-                           nullable=False,
-                           default=Plan.free_plan_max_cpu_hours)
-    max_examples = Column(INTEGER(unsigned=True), nullable=False, default=Plan.free_plan_max_examples)
-    space_limit = Column(BIGINT(unsigned=True), nullable=False, default=Plan.free_plan_space_limit)
+    max_deployments = Column(INTEGER(unsigned=True), nullable=False)
+    max_predictions = Column(INTEGER(unsigned=True), nullable=False)
+    max_gpu_hours = Column(DECIMAL(precision=7, scale=2, asdecimal=False), nullable=False)
+    max_cpu_hours = Column(DECIMAL(precision=7, scale=2, asdecimal=False), nullable=False)
+    max_examples = Column(INTEGER(unsigned=True), nullable=False)
+    space_limit = Column(BIGINT(unsigned=True), nullable=False)
     # Quota usage
     num_deployments = Column(INTEGER(unsigned=True), nullable=False, default=0)
     num_predictions = Column(INTEGER(unsigned=True), nullable=False, default=0)
@@ -338,6 +336,50 @@ class CategoryDB(MutableEntity):
     display_name = Column(String(64))
     description = Column(String(256))
     color = Column(String(6))
+
+
+#############
+# Listeners #
+#############
+
+
+@event.listens_for(TaskDB, 'before_insert')
+def _set_task_quota_limits_before_insert(mapper, connection, target):
+    """
+    Sets the quota limits for the task before inserting it into the database if not provided.
+    If the associated organization has an active subscription, the limits are set according to the subscription plan.
+    Otherwise, the limits are set according to the free plan.
+    """
+    # Get the active subscription for the organization
+    active_subscription = get_active_subscription(organization_id=target.organization_id)
+
+    # Assign quota limits
+    if active_subscription is not None:
+        if target.max_deployments is None:
+            target.max_deployments = active_subscription.plan.max_deployments
+        if target.max_predictions is None:
+            target.max_predictions = active_subscription.plan.max_predictions
+        if target.max_examples is None:
+            target.max_examples = active_subscription.plan.max_examples
+        if target.max_gpu_hours is None:
+            target.max_gpu_hours = active_subscription.plan.max_gpu_hours
+        if target.max_cpu_hours is None:
+            target.max_cpu_hours = active_subscription.plan.max_cpu_hours
+        if target.space_limit is None:
+            target.space_limit = active_subscription.plan.space_limit
+    else:
+        if target.max_deployments is None:
+            target.max_deployments = Plan.free_plan_max_deployments()
+        if target.max_predictions is None:
+            target.max_predictions = Plan.free_plan_max_predictions()
+        if target.max_examples is None:
+            target.max_examples = Plan.free_plan_max_examples()
+        if target.max_gpu_hours is None:
+            target.max_gpu_hours = Plan.free_plan_max_gpu_hours()
+        if target.max_cpu_hours is None:
+            target.max_cpu_hours = Plan.free_plan_max_cpu_hours()
+        if target.space_limit is None:
+            target.space_limit = Plan.free_plan_space_limit()
 
 
 ##############
