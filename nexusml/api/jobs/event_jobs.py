@@ -5,7 +5,9 @@ from celery import shared_task
 
 from nexusml.api.utils import get_engine_type
 from nexusml.database.services import Service
+from nexusml.database.tasks import TaskDB
 from nexusml.engine.buffers import MonBuffer
+from nexusml.engine.buffers import MonBufferIO
 from nexusml.engine.services.monitoring import MonitoringService
 from nexusml.engine.workers import get_engine
 from nexusml.enums import ServiceType
@@ -19,7 +21,7 @@ from nexusml.statuses import MONITORING_WAITING_STATUS_CODE
 
 
 @shared_task
-def run_mon_service(mon_buffer: 'MonBuffer') -> None:
+def run_mon_service(task_id: int) -> None:
     """
     Runs the Monitoring Service.
 
@@ -33,7 +35,7 @@ def run_mon_service(mon_buffer: 'MonBuffer') -> None:
     7. Reset the service status to waiting after completion.
 
     Args:
-        mon_buffer (MonBuffer): The buffer containing the predictions data to be processed.
+        task_id (int): The task ID associated with the monitoring service.
 
     Returns:
         None
@@ -47,6 +49,9 @@ def run_mon_service(mon_buffer: 'MonBuffer') -> None:
     default_ood_min_sample: int = 100  # in number of predictions / verify max buffer size
     default_ood_sensitivity: float = 0.5
     default_ood_smoothing: float = 0.5
+
+    task = TaskDB.get(task_id=task_id)
+    mon_buffer: MonBuffer = MonBuffer(buffer_io=MonBufferIO(task=task))
 
     # Get service settings
     mon_service_db: Service = Service.filter_by_task_and_type(task_id=mon_buffer.task().task_id,

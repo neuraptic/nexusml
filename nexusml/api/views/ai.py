@@ -688,7 +688,7 @@ def _write_prediction_to_buffers(task: TaskDB, predictions_list: List[Prediction
     mon_buffer.write(items=predictions_list)
 
     # Trigger Monitoring Service to process the buffer
-    run_mon_service.delay(mon_buffer=mon_buffer)
+    run_mon_service.delay(task_id=task.task_id)
 
 
 @shared_task

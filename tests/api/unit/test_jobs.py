@@ -339,25 +339,11 @@ class TestRunMonService:
     successful execution, error handling, and status transitions.
 
     Fixtures:
-        mock_mon_buffer: Mock of the mon_buffer object, simulating the input buffer and task details.
         mock_monitoring_service: Mock of the `MonitoringService` class, controlling its behaviors such as
             sample checks and status updates.
         mock_service_filter_by_task_and_type: Mock of the `Service.filter_by_task_and_type` method to simulate
             different service settings and statuses.
     """
-
-    @pytest.fixture
-    def mock_mon_buffer(self):
-        """Fixture that provides a mock `mon_buffer` object with a mocked `task_id` and buffered items.
-
-        Mocks:
-            - mon_buffer.task.task_id: Simulates task identification.
-            - mon_buffer.buffer_io.read_items: Provides items for further service analysis.
-        """
-        mock_buffer: MagicMock = MagicMock()
-        mock_buffer.task.return_value.task_id = 'task_id'
-        mock_buffer.buffer_io.return_value.read_items.return_value = ['item1', 'item2']
-        return mock_buffer
 
     @pytest.fixture
     def mock_monitoring_service(self, mocker):
@@ -403,8 +389,7 @@ class TestRunMonService:
 
         return mock_service_
 
-    def test_run_mon_service_success(self, mock_service_filter_by_task_and_type, mock_mon_buffer,
-                                     mock_monitoring_service):
+    def test_run_mon_service_success(self, mock_service_filter_by_task_and_type, mock_monitoring_service):
         """Test for successful execution of `run_mon_service`.
 
         Steps:
@@ -418,15 +403,14 @@ class TestRunMonService:
         """
         mon_service_instance = mock_monitoring_service.return_value
 
-        run_mon_service(mock_mon_buffer)
+        run_mon_service(task_id=1)
 
         mock_monitoring_service.assert_called_once()
         mon_service_instance.update_service_status.assert_any_call(code=MONITORING_ANALYZING_STATUS_CODE)
         mon_service_instance.detect_ood_predictions.assert_called_once()
         mon_service_instance.update_service_status.assert_any_call(code=MONITORING_WAITING_STATUS_CODE)
 
-    def test_run_mon_service_no_service_found(self, mock_mon_buffer, mock_monitoring_service,
-                                              mock_service_filter_by_task_and_type):
+    def test_run_mon_service_no_service_found(self, mock_monitoring_service, mock_service_filter_by_task_and_type):
         """Test `run_mon_service` when no service is found.
 
         Steps:
@@ -439,12 +423,11 @@ class TestRunMonService:
         mock_service_filter_by_task_and_type.return_value = None
 
         with pytest.raises(AttributeError):
-            run_mon_service(mock_mon_buffer)
+            run_mon_service(task_id=1)
 
         mock_monitoring_service.assert_not_called()
 
-    def test_run_mon_service_not_enough_samples(self, mock_mon_buffer, mock_monitoring_service,
-                                                mock_service_filter_by_task_and_type):
+    def test_run_mon_service_not_enough_samples(self, mock_monitoring_service, mock_service_filter_by_task_and_type):
         """Test `run_mon_service` when there are not enough samples.
 
         Steps:
@@ -457,12 +440,14 @@ class TestRunMonService:
         mon_service_instance = mock_monitoring_service.return_value
         mon_service_instance.check_if_enough_samples.return_value = False
 
-        run_mon_service(mock_mon_buffer)
+        run_mon_service(task_id=1)
 
         mon_service_instance.update_service_status.assert_not_called()
         mon_service_instance.detect_ood_predictions.assert_not_called()
 
-    def test_run_mon_service_status_not_waiting(self, mocker, mock_mon_buffer, mock_monitoring_service,
+    def test_run_mon_service_status_not_waiting(self,
+                                                mocker,
+                                                mock_monitoring_service,
                                                 mock_service_filter_by_task_and_type):
         """Test `run_mon_service` when the service status is not in a waiting state.
 
@@ -479,13 +464,12 @@ class TestRunMonService:
         instance = mock_monitoring_service.return_value
         instance.update_service_status = mocker.MagicMock()
 
-        run_mon_service(mock_mon_buffer)
+        run_mon_service(task_id=1)
 
         instance.update_service_status.assert_not_called()
         mon_service_instance.detect_ood_predictions.assert_not_called()
 
-    def test_run_mon_service_exception(self, mock_mon_buffer, mock_monitoring_service,
-                                       mock_service_filter_by_task_and_type):
+    def test_run_mon_service_exception(self, mock_monitoring_service, mock_service_filter_by_task_and_type):
         """Test `run_mon_service` to handle an exception during OOD prediction detection.
 
         Steps:
@@ -497,6 +481,6 @@ class TestRunMonService:
         mon_service_instance = mock_monitoring_service.return_value
         mon_service_instance.detect_ood_predictions.side_effect = Exception('Test exception')
 
-        run_mon_service(mock_mon_buffer)
+        run_mon_service(task_id=1)
 
         mon_service_instance.update_service_status.assert_any_call(code=MONITORING_UNKNOWN_ERROR_STATUS_CODE)
