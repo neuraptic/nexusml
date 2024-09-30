@@ -37,7 +37,6 @@ from nexusml.api.resources.organizations import Organization
 from nexusml.api.resources.tasks import Task
 from nexusml.api.utils import API_DOMAIN
 from nexusml.api.utils import config
-from nexusml.api.views import organizations as organizations_views
 from nexusml.constants import CONFIG_FILE
 from nexusml.database.organizations import client_scopes
 from nexusml.enums import FileStorageBackend
@@ -883,17 +882,17 @@ def monkey_patches(monkeypatch, backend):
     # Use `monkeypatch.setattr(constants, <constant>, <value>)`. #
     ##############################################################
     pass
+
     #############################################################
     # Functions.                                                #
 
     # Use `monkeypatch.setattr(<module>, <function>, <value>)`. #
     #############################################################
     monkeypatch.setattr(flask_mail.Mail, 'send', (lambda self, message: None))
+
     ########################################################################################
     # Celery tasks (required to bypass `@shared_task`, which injects `.delay()` function). #
 
     # Use `monkeypatch.setattr(<module>, <function>, mock_celery_task)`.                   #
     ########################################################################################
-    # Warning: don't move these imports as they require `backend` (i.e., an app context).
-
-    monkeypatch.setattr(organizations_views, '_populate_demo_tasks', mock_celery_task)
+    pass

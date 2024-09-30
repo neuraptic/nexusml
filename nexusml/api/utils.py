@@ -90,7 +90,6 @@ DEFAULT_CONFIG = {
         },
     },
     'general': {
-        'demo_tasks_enabled': True,
         'default_api_key_enabled': True  # Default API key for testing purposes.
     },
     'jobs': {

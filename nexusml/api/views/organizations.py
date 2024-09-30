@@ -1,6 +1,6 @@
 from datetime import datetime
 import os
-from typing import Dict, List
+from typing import List
 
 from celery import shared_task
 from flask import current_app
@@ -22,7 +22,6 @@ from nexusml.api.resources.base import Resource
 from nexusml.api.resources.base import ResourceError
 from nexusml.api.resources.base import ResourceNotFoundError
 from nexusml.api.resources.base import UnprocessableRequestError
-from nexusml.api.resources.files import TaskFile
 from nexusml.api.resources.organizations import check_last_admin_deletion
 from nexusml.api.resources.organizations import Client
 from nexusml.api.resources.organizations import Collaborator
@@ -77,15 +76,8 @@ from nexusml.constants import HTTP_SERVICE_UNAVAILABLE
 from nexusml.constants import MAINTAINER_ROLE
 from nexusml.constants import NUM_RESERVED_CLIENTS
 from nexusml.constants import SWAGGER_TAG_ORGANIZATIONS
-from nexusml.database.ai import AIModelDB
 from nexusml.database.core import delete_from_db
 from nexusml.database.core import save_to_db
-from nexusml.database.examples import ExampleDB
-from nexusml.database.examples import ExCategory
-from nexusml.database.examples import ExFile
-from nexusml.database.examples import ShapeCategory
-from nexusml.database.examples import ShapeDB
-from nexusml.database.files import TaskFileDB
 from nexusml.database.organizations import ClientDB
 from nexusml.database.organizations import CollaboratorDB
 from nexusml.database.organizations import InvitationDB
@@ -97,21 +89,13 @@ from nexusml.database.permissions import RolePermission
 from nexusml.database.permissions import UserPermission
 from nexusml.database.services import Service
 from nexusml.database.subscriptions import SubscriptionDB
-from nexusml.database.tasks import CategoryDB
-from nexusml.database.tasks import copy_task_to_organization
-from nexusml.database.tasks import demo_tasks
-from nexusml.database.tasks import ElementDB
 from nexusml.database.tasks import TaskDB
-from nexusml.enums import DBRelationshipType
 from nexusml.enums import InviteStatus
 from nexusml.env import ENV_AUTH0_SIGN_UP_REDIRECT_URL
 from nexusml.env import ENV_NOTIFICATION_EMAIL
 from nexusml.env import ENV_SUPPORT_EMAIL
 from nexusml.statuses import Status
-from nexusml.statuses import task_active_status
 from nexusml.statuses import task_copying_status
-from nexusml.utils import get_s3_config
-from nexusml.utils import s3_client
 
 # Note: This pylint directive is disabled because we are passing `user_id`, `role_id`, or `collaborator_id`
 # to the `agent_id` parameter for greater specificity.
@@ -150,207 +134,17 @@ def _update_task_copy_progress(task: TaskDB, progress: int):
     task.set_status(status=copy_status)
 
 
-@shared_task
-def _populate_demo_tasks(user_id: int, pk_maps: Dict[str, list]):
-    """
-    Creates files, examples, and AI models in the user organization's demo tasks.
-
-    Notes on progress info update:
-        - Files copy complete: 50%
-            - Database rows copied: 5%
-            - S3 files copied: 50% (updated every 30 files)
-        - Examples copy complete: 80%
-            - Examples' entries copied: 60%
-            - Examples' values copied: 80%
-        - Shapes copy complete: 95%
-        - AI models copy complete: 100%
-
-    Args:
-        user_id (int): Surrogate key of the user who created the organization.
-        pk_maps (dict): Dictionary mapping demo task IDs to copied task IDs and their
-                        primary key mappings. The format is as follows:
-                        {
-                            <demo_task_id_1> (str): [
-                                <task_copy_id_1> (int),
-                                {
-                                    <pk_col_1> (str): {
-                                        <demo_pk_val_1> (str): <copy_pk_val_1> (int),
-                                        ...
-                                        <demo_pk_val_N> (str): <copy_pk_val_N> (int)
-                                    },
-                                    ...
-                                    <pk_col_N> (str): {
-                                        <demo_pk_val_1> (str): <copy_pk_val_1> (int),
-                                        ...
-                                        <demo_pk_val_N> (str): <copy_pk_val_N> (int)
-                                    }
-                                }
-                            ],
-                            ...
-                            <demo_task_id_N> (str): [
-                                <task_copy_id_N> (int),
-                                {
-                                    ...
-                                }
-                            ]
-                        }
-    """
-    pk_maps = {
-        int(k): (v[0], {
-            vk: {
-                int(vvk): vvv for vvk, vvv in vv.items()
-            } for vk, vv in v[1].items()
-        }) for k, v in pk_maps.items()
-    }
-
-    user = UserDB.get(user_id=user_id)
-
-    s3_config = get_s3_config()
-
-    for demo_task_id, pk_map_ in pk_maps.items():
-        demo_task = TaskDB.get(task_id=demo_task_id)
-        task_copy = TaskDB.get(task_id=pk_map_[0])
-
-        # Primary key mappings
-        pk_map = pk_map_[1]
-
-        elem_full_pk_name = ElementDB.__name__ + '.element_id'
-        cat_full_pk_name = CategoryDB.__name__ + '.category_id'
-
-        # Copy files
-        # TODO: files should be copied at SQL level to scale to large number of files
-        files = TaskFileDB.query().filter_by(task_id=demo_task_id).all()
-        files_copy = []
-        files_pks = []
-        cols_to_copy = TaskFileDB.columns() - {'file_id', 'task_id', 'uuid', 'public_id'}
-        for file in files:
-            # Copy file's database entry
-            file_copy = TaskFileDB(**{col: getattr(file, col) for col in cols_to_copy})
-            file_copy.task_id = task_copy.task_id
-            file_copy.created_by_user = user.user_id
-            file_copy.modified_by_user = user.user_id
-            file_copy.synced_by_users = [user.user_id]
-            files_copy.append(file_copy)
-            files_pks.append(file.file_id)
-        save_to_db(files_copy)
-
-        _update_task_copy_progress(task=task_copy, progress=5)
-
-        for idx, (file, file_copy) in enumerate(zip(files, files_copy)):
-            # Copy file in S3
-            assert file.use_for == file_copy.use_for
-            src = (s3_config['bucket'] + '/' + TaskFile.prefix() + str(demo_task.uuid) + '/' +
-                   TaskFile.use_prefixes()[file.use_for] + str(file.uuid))
-            dst = (TaskFile.prefix() + str(task_copy.uuid) + '/' + TaskFile.use_prefixes()[file_copy.use_for] +
-                   str(file_copy.uuid))
-            s3_client().copy_object(CopySource=src, Bucket=s3_config['bucket'], Key=dst)
-            # Update task status
-            if (idx + 1) % 30 == 0:
-                _update_task_copy_progress(task=task_copy, progress=(5 + round(45 * (idx + 1) / len(files))))
-
-        # Copy examples
-        # TODO: examples should be copied at SQL level to scale to large number of examples
-        examples = ExampleDB.query().filter_by(task_id=demo_task.task_id).all()
-        examples_copy = []
-        cols_to_copy = ExampleDB.columns() - {'task_id', 'example_id', 'uuid', 'public_id'}
-        for ex in examples:
-            # Copy example's entry
-            ex_copy = ExampleDB(**{col: getattr(ex, col) for col in cols_to_copy})
-            ex_copy.task_id = task_copy.task_id
-            ex_copy.created_by_user = user.user_id
-            ex_copy.modified_by_user = user.user_id
-            ex_copy.synced_by_users = [user.user_id]
-            examples_copy.append(ex_copy)
-        save_to_db(examples_copy)
-
-        _update_task_copy_progress(task=task_copy, progress=60)
-
-        examples_pks = dict()
-        ex_values_copy = []
-        for ex, ex_copy in zip(examples, examples_copy):
-            examples_pks[ex.example_id] = ex_copy.example_id
-            # Copy example's values
-            values = [getattr(ex, r) for r in ExampleDB.relationship_types()[DBRelationshipType.ASSOCIATION_OBJECT]]
-            for value_list in values:
-                for value in value_list:
-                    value_copy = value.__class__(**{col: getattr(value, col) for col in value.columns()})
-                    value_copy.example_id = ex_copy.example_id
-                    value_copy.element_id = pk_map[elem_full_pk_name][value.element_id]
-                    # Update reference to files and categories
-                    if value.value is not None:
-                        if isinstance(value, ExFile):
-                            value_copy.value = files_copy[files_pks.index(value.value)].file_id
-                        elif isinstance(value, ExCategory):
-                            value_copy.value = pk_map[cat_full_pk_name][value.value]
-                    ex_values_copy.append(value_copy)
-        save_to_db(ex_values_copy)
-
-        _update_task_copy_progress(task=task_copy, progress=80)
-
-        # Copy shapes
-        shapes = ShapeDB.query().filter(ShapeDB.example_id.in_(examples_pks.keys())).all()
-        shapes_copy = []
-        cols_to_copy = ShapeDB.columns() - {'example_id', 'element_id', 'shape_id', 'uuid', 'public_id'}
-        for shape in shapes:
-            # Copy shape's entry
-            shape_copy = ShapeDB(**{col: getattr(shape, col) for col in cols_to_copy})
-            shape_copy.example_id = examples_pks[shape.example_id]
-            shape_copy.element_id = pk_map[elem_full_pk_name][shape.element_id]
-            shape_copy.created_by_user = user.user_id
-            shape_copy.modified_by_user = user.user_id
-            shape_copy.synced_by_users = [user.user_id]
-            shapes_copy.append(shape_copy)
-        save_to_db(shapes_copy)
-
-        shape_outputs_copy = []
-        for shape, shape_copy in zip(shapes, shapes_copy):
-            # Copy shape's output values
-            for output_value in shape.shape_floats + shape.shape_categories:
-                output_type = type(output_value)
-                output_value_copy = output_type(**{c: getattr(output_value, c) for c in output_type.columns()})
-                output_value_copy.shape_id = shape_copy.shape_id
-                output_value_copy.element_id = pk_map[elem_full_pk_name][output_value.element_id]
-                shape_outputs_copy.append(output_value_copy)
-                if output_value.value is not None and isinstance(output_value, ShapeCategory):
-                    output_value_copy.value = pk_map[cat_full_pk_name][output_value.value]
-        save_to_db(shape_outputs_copy)
-
-        _update_task_copy_progress(task=task_copy, progress=95)
-
-        # Copy AI models
-        ai_models = AIModelDB.query().filter_by(task_id=demo_task.task_id).all()
-        ai_models_copy = []
-        cols_to_copy = AIModelDB.columns() - {'model_id', 'task_id', 'uuid', 'public_id'}
-        for ai_model in ai_models:
-            ai_model_copy = AIModelDB(**{col: getattr(ai_model, col) for col in cols_to_copy})
-            try:
-                ai_model_copy.file_id = files_copy[files_pks.index(ai_model.file_id)].file_id
-            except Exception:
-                pass
-            ai_model_copy.task_id = task_copy.task_id
-            ai_model_copy.created_by_user = user.user_id
-            ai_model_copy.modified_by_user = user.user_id
-            ai_model_copy.synced_by_users = [user.user_id]
-            ai_models_copy.append(ai_model_copy)
-        save_to_db(ai_models_copy)
-
-        # Update task status
-        task_copy.set_status(status=Status(template=task_active_status))
-
-
 class OrganizationsView(_OrganizationsView):
 
     @staticmethod
-    def _set_organization(user_auth0_id: str, org_db_object: OrganizationDB, copy_demo_tasks: bool) -> Organization:
+    def _set_organization(user_auth0_id: str, org_db_object: OrganizationDB) -> Organization:
         """
         Sets up an organization's basic configuration. It subscribes the organization to the Free Plan,
-        creates predefined roles ("admin" and "maintainer"), assigns the admin role to the user,
-        and optionally copies demo tasks.
+        creates predefined roles ("admin" and "maintainer"), and assigns the admin role to the user.
 
         Args:
             user_auth0_id (str): Auth0 ID of the user creating the organization.
             org_db_object (OrganizationDB): The organization database object.
-            copy_demo_tasks (bool): Whether to copy demo tasks for the organization.
 
         Returns:
             Organization: The organization object with the basic configuration set.
@@ -359,6 +153,7 @@ class OrganizationsView(_OrganizationsView):
         # Subscribe to the Free Plan #
         ##############################
         subscription = SubscriptionDB(organization_id=org_db_object.organization_id, plan_id=FREE_PLAN_ID)
+
         #########################################################################################################
         # Create "admin" and "maintainer" roles.                                                                #
 
@@ -369,6 +164,7 @@ class OrganizationsView(_OrganizationsView):
                                  name=MAINTAINER_ROLE,
                                  description='Maintainer')
         save_to_db([admin_role, maintainer_role])
+
         ###################################################################################
         # Add the first user ( session user) to the organization and assign "admin" role #
         ###################################################################################
@@ -389,23 +185,6 @@ class OrganizationsView(_OrganizationsView):
         # Update user count
         subscription.num_users = 1
         save_to_db(subscription)
-        ############################################################
-        # Copy demo tasks in the background (asynchronous process) #
-        ############################################################
-        if copy_demo_tasks:
-            # Create and init tasks
-            pk_maps = dict()
-            for demo_task in demo_tasks():
-                # Copy task schema
-                task_copy, pk_map = copy_task_to_organization(src_task=demo_task, agent=user_db_obj)
-                pk_maps[demo_task.task_id] = (task_copy.task_id, pk_map)
-                # Initialize task
-                task_copy.init_task()
-                # Update task status
-                _update_task_copy_progress(task=task_copy, progress=0)
-
-            # Populate tasks in the background
-            _populate_demo_tasks.delay(user_db_obj.user_id, pk_maps)
 
         return Organization.get(agent=user_db_obj, db_object_or_id=org_db_object)
 
@@ -415,7 +194,7 @@ class OrganizationsView(_OrganizationsView):
     def post(self, **kwargs):
         """
         Creates a new organization. It checks the system capacity, verifies user and organization details,
-        and sets up the organization with a subscription, predefined roles, and optionally demo tasks.
+        and sets up the organization with a subscription and predefined roles.
 
         Args:
             **kwargs: Keyword arguments containing organization details from the request.
@@ -465,12 +244,10 @@ class OrganizationsView(_OrganizationsView):
         org_db_object = OrganizationDB(**kwargs)
         save_to_db(org_db_object)
 
-        # Set organization (subscription, admin user, predefined roles, demo tasks)
+        # Set organization (subscription, admin user, predefined roles)
         try:
-            organization = OrganizationsView._set_organization(
-                user_auth0_id=g.user_auth0_id,
-                org_db_object=org_db_object,
-                copy_demo_tasks=config.get('general')['demo_tasks_enabled'])
+            organization = OrganizationsView._set_organization(user_auth0_id=g.user_auth0_id,
+                                                               org_db_object=org_db_object)
         except Exception as e:
             delete_from_db(org_db_object)
             raise e

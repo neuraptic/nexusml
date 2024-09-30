@@ -48,7 +48,6 @@ TEST_CONFIG = {
         },
     },
     'general': {
-        'demo_tasks_enabled': True,
         'default_api_key_enabled': False
     },
     'jobs': {

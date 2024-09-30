@@ -60,7 +60,6 @@ from nexusml.database.organizations import UserDB
 from nexusml.database.permissions import RolePermission
 from nexusml.database.permissions import UserPermission
 from nexusml.database.services import Service
-from nexusml.database.tasks import demo_tasks
 from nexusml.database.tasks import TaskDB
 from nexusml.enums import ResourceAction
 from nexusml.enums import ResourceType
@@ -102,11 +101,6 @@ class TasksView(_TasksView):
         Retrieves a list of tasks accessible to the current session agent based on their organization and permissions.
         This method checks the agent's organization, permissions, and roles to determine which tasks can be accessed.
 
-        Steps:
-        1. Double-check the session user is related to the tasks' organization.
-        2. Filter tasks by organization permissions, considering session agent roles and demo tasks.
-        3. Return the accessible tasks in JSON format.
-
         Returns:
             Response: The response containing the accessible tasks.
         """
@@ -138,11 +132,6 @@ class TasksView(_TasksView):
                         tasks.append(task)
                 except PermissionDeniedError:
                     continue
-
-            # Ignore demo tasks' templates
-            if session_agent.organization_id == 1:
-                _demo_tasks = demo_tasks()
-                tasks = [x for x in tasks if x.db_object() not in _demo_tasks]
 
             # Return JSONs
             return jsonify(dump(tasks))

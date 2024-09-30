@@ -416,57 +416,6 @@ def _set_task_quota_limits_before_insert(mapper, connection, target):
         raise ValueError(f'Invalid quota limits: {", ".join(invalid_limits)}')
 
 
-##############
-# Demo Tasks #
-##############
-
-
-def demo_tasks() -> List[TaskDB]:
-    demo_task_info = [
-        {
-            'uuid': '1fefd1ef-0f96-4c9e-93d3-365f638208b4',
-            'name': 'Demand Forecast (Demo)',
-            'description': 'ADD DESCRIPTION'
-        },
-        {
-            'uuid': '921e5432-aa2f-463d-87c0-100efaceebb5',
-            'name': 'Invoice Registration (Demo)',
-            'description': 'ADD DESCRIPTION'
-        },
-        {
-            'uuid': '251b1ef1-602c-4277-bc39-795dd8aa1dba',
-            'name': 'Product Classification (Demo)',
-            'description': 'ADD DESCRIPTION'
-        },
-        {
-            'uuid': 'e8a129f0-501d-4125-af4d-1b51897afd0d',
-            'name': 'Quality Inspection (Demo)',
-            'description': 'ADD DESCRIPTION'
-        },
-        {
-            'uuid': 'ba94060a-3040-4c43-ab0b-34720df52472',
-            'name': 'Risk Customer Rating (Demo)',
-            'description': 'ADD DESCRIPTION'
-        },
-    ]
-
-    _demo_tasks = []
-
-    for task_info in demo_task_info:
-        task = TaskDB.get_from_uuid(task_info['uuid'])
-
-        if task is None:
-            task = TaskDB(organization_id=1, **task_info)
-            save_to_db(task)
-            task.init_task(ignore_errors=True)
-        else:
-            assert task.organization_id == 1
-
-        _demo_tasks.append(task)
-
-    return _demo_tasks
-
-
 #########
 # Utils #
 #########

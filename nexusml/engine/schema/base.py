@@ -450,8 +450,7 @@ def get_pipeline_type(task_schema: Union[Schema, Dict]) -> PipelineType:
     """
     This function analyzes the schema to get the pipelines to apply.
 
-    For now, we have some pipelines developed for the free demo, so check them. In the future, we should have
-    a list or a dictionary that maps schema -> pipelines.
+    Note: In the future, we should have a list or a dictionary that maps schema -> pipelines.
 
     Steps:
         1) Check the task type. If it is unknown, return "unknown pipeline".

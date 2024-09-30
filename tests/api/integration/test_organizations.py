@@ -98,9 +98,10 @@ class TestOrganizations:
                   mock_client_id: str,
                   session_user_id: str,
                   session_user_auth0_id: str):
-        """
-        Valid request
-        """
+        #################
+        # Valid request #
+        #################
+
         # Delete session user from database to be able to create a new organization
         session_user = UserDB.query().filter_by(auth0_id=session_user_auth0_id).first()
         delete_from_db(session_user)
@@ -140,9 +141,6 @@ class TestOrganizations:
         assert org_subscription.num_collaborators == 0
         assert org_subscription.num_clients == 0
 
-        # Check demo tasks' copies
-        # Note: demo tasks are populated asynchronously with a Celery task. Only the schema is copied upon the request.
-        pass  # TODO
         ####################################################
         # Try to create another organization (not allowed) #
         ####################################################
@@ -160,6 +158,7 @@ class TestOrganizations:
         assert response.json()['error']['message'] == 'You already belong to another organization'
         db_commit_and_expire()
         assert OrganizationDB.get_from_id(id_value=org_trn) is None
+
         #################
         # Duplicate TRN #
         #################
@@ -178,6 +177,7 @@ class TestOrganizations:
                                        json=invalid_org_data)
         assert response.status_code == HTTP_CONFLICT_STATUS_CODE
         assert response.json()['error']['message'] == f'Organization "{duplicate_trn}" already exists'
+
         ###############################################
         # Domain mismatch (user's and organization's) #
         ###############################################
@@ -196,6 +196,7 @@ class TestOrganizations:
         assert response.json()['error']['message'] == "Domains don't match"
         db_commit_and_expire()
         assert OrganizationDB.get_from_id(id_value=org_trn) is None
+
         #####################################################
         # Try to exceed the maximum number of organizations #
         #####################################################
