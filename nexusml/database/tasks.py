@@ -350,36 +350,70 @@ def _set_task_quota_limits_before_insert(mapper, connection, target):
     If the associated organization has an active subscription, the limits are set according to the subscription plan.
     Otherwise, the limits are set according to the free plan.
     """
+
+    def _set_quota_limit_if_none(limit_name, limit_value):
+        current_value = getattr(target, limit_name)
+        if current_value is None:
+            setattr(target, limit_name, limit_value)
+        elif current_value > limit_value:
+            raise ValueError()
+
+    invalid_limits = []
+
     # Get the active subscription for the organization
     active_subscription = get_active_subscription(organization_id=target.organization_id)
+    active_plan = active_subscription.plan if active_subscription is not None else None
 
-    # Assign quota limits
-    if active_subscription is not None:
-        if target.max_deployments is None:
-            target.max_deployments = active_subscription.plan.max_deployments
-        if target.max_predictions is None:
-            target.max_predictions = active_subscription.plan.max_predictions
-        if target.max_examples is None:
-            target.max_examples = active_subscription.plan.max_examples
-        if target.max_gpu_hours is None:
-            target.max_gpu_hours = active_subscription.plan.max_gpu_hours
-        if target.max_cpu_hours is None:
-            target.max_cpu_hours = active_subscription.plan.max_cpu_hours
-        if target.space_limit is None:
-            target.space_limit = active_subscription.plan.space_limit
+    # Get plan quota limits
+    if active_plan is not None:
+        max_deployments = active_plan.max_deployments
+        max_predictions = active_plan.max_predictions
+        max_examples = active_plan.max_examples
+        max_gpu_hours = active_plan.max_gpu_hours
+        max_cpu_hours = active_plan.max_cpu_hours
+        space_limit = active_plan.space_limit
     else:
-        if target.max_deployments is None:
-            target.max_deployments = Plan.free_plan_max_deployments()
-        if target.max_predictions is None:
-            target.max_predictions = Plan.free_plan_max_predictions()
-        if target.max_examples is None:
-            target.max_examples = Plan.free_plan_max_examples()
-        if target.max_gpu_hours is None:
-            target.max_gpu_hours = Plan.free_plan_max_gpu_hours()
-        if target.max_cpu_hours is None:
-            target.max_cpu_hours = Plan.free_plan_max_cpu_hours()
-        if target.space_limit is None:
-            target.space_limit = Plan.free_plan_space_limit()
+        max_deployments = Plan.free_plan_max_deployments()
+        max_predictions = Plan.free_plan_max_predictions()
+        max_examples = Plan.free_plan_max_examples()
+        max_gpu_hours = Plan.free_plan_max_gpu_hours()
+        max_cpu_hours = Plan.free_plan_max_cpu_hours()
+        space_limit = Plan.free_plan_space_limit()
+
+    # Set quota limits
+    try:
+        _set_quota_limit_if_none('max_deployments', max_deployments)
+    except ValueError:
+        invalid_limits.append('max_deployments')
+
+    try:
+        _set_quota_limit_if_none('max_predictions', max_predictions)
+    except ValueError:
+        invalid_limits.append('max_predictions')
+
+    try:
+        _set_quota_limit_if_none('max_examples', max_examples)
+    except ValueError:
+        invalid_limits.append('max_examples')
+
+    try:
+        _set_quota_limit_if_none('max_gpu_hours', max_gpu_hours)
+    except ValueError:
+        invalid_limits.append('max_gpu_hours')
+
+    try:
+        _set_quota_limit_if_none('max_cpu_hours', max_cpu_hours)
+    except ValueError:
+        invalid_limits.append('max_cpu_hours')
+
+    try:
+        _set_quota_limit_if_none('space_limit', space_limit)
+    except ValueError:
+        invalid_limits.append('space_limit')
+
+    # Verify that all quota limits are valid
+    if invalid_limits:
+        raise ValueError(f'Invalid quota limits: {", ".join(invalid_limits)}')
 
 
 ##############
