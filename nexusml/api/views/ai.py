@@ -23,7 +23,7 @@ from nexusml.api.resources.base import PermissionDeniedError
 from nexusml.api.resources.base import Resource
 from nexusml.api.resources.base import ResourceNotFoundError
 from nexusml.api.resources.base import UnprocessableRequestError
-from nexusml.api.resources.files import File
+from nexusml.api.resources.files import TaskFile as File
 from nexusml.api.resources.tasks import Task
 from nexusml.api.resources.utils import get_preloaded_db_object
 from nexusml.api.resources.utils import preload_task_db_objects
