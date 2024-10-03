@@ -716,6 +716,16 @@ class EngineWorker(abc.ABC):
 
     @abc.abstractmethod
     def load_model(self, model_uuid: str) -> Model:
+        """
+        Abstract method that defines the interface for downloading, extracting, and loading a model
+        based on a unique identifier.
+
+        Args:
+            model_uuid (str): The unique identifier for the model to be loaded.
+
+        Returns:
+            Model: The loaded model instance.
+        """
         pass
 
     @abc.abstractmethod
@@ -869,6 +879,17 @@ class EngineWorker(abc.ABC):
 
     @abc.abstractmethod
     def predict(self, environment: AIEnvironment, data: List[dict]) -> List[dict]:
+        """
+        Abstract method that defines the interface for making predictions based on provided data
+        within a specified AI environment.
+
+        Args:
+            environment (AIEnvironment): The environment in which the prediction will be made.
+            data (List[dict]): A list of input data, where each dictionary represents an example to be predicted.
+
+        Returns:
+            List[dict]: A list of dictionaries representing the predicted results for each input data.
+        """
         pass
 
 
@@ -1001,7 +1022,7 @@ class LocalEngineWorker(EngineWorker):
             Args:
                 task_uuid (str): The unique identifier for the task.
                 environment (AIEnvironment): The environment (e.g., production, testing) in which the task operates.
-                data (List[dict]): A list of input data for prediction.
+                data (List[dict]): A list of input data, where each dictionary represents an example to be predicted.
 
             Returns:
                 List[dict]: The predicted output from the model.
@@ -1224,25 +1245,28 @@ class LocalEngineWorker(EngineWorker):
                                check_parents=False)
         return ai_model.dump()
 
-    def load_model(self, model_uuid) -> Model:
+    def load_model(self, model_uuid: str) -> Model:
         """
-        Loads a model from a zip file located in a temporary directory. The method retrieves the model file
-        from a specified location, extracts it from a zip archive, and returns the loaded model.
+        Downloads, extracts, and loads a model based on a unique identifier, and returns the loaded model instance.
 
-        Important steps:
-        1. Create a temporary directory for storing the model files.
-        2. Retrieve the model zip file using the provided `model_uuid`.
-        3. Extract the `model.pkl` file from the zip archive.
-        4. Load the model using the extracted file and clean up the temporary directory.
+        The function initiates by creating a temporary directory where the downloaded model will be stored.
+        It then calls the `get_model_file` method to download the model into the temporary location. Afterward,
+        the function attempts to extract the `model.pkl` file from the downloaded zip archive. If the file is found,
+        it extracts the model, loads it using the `Model.load()` method, and finally cleans up the temporary directory.
+        The function then returns the loaded model.
+
+        Steps:
+        1. Create a temporary directory to store the downloaded model file.
+        2. Download the model into the temporary directory using the provided model UUID.
+        3. Extract the 'model.pkl' file from the downloaded zip file.
+        4. Load the extracted model using the `Model.load` method.
+        5. Clean up the temporary directory and return the model instance.
 
         Args:
             model_uuid (str): The unique identifier for the model to be loaded.
 
         Returns:
             Model: The loaded model instance.
-
-        Assertions:
-            - The zip file contains a `model.pkl` file, which is extracted successfully.
         """
         # Temp dir for the model
         temp_dir = tempfile.TemporaryDirectory()
@@ -1489,19 +1513,27 @@ class LocalEngineWorker(EngineWorker):
 
     def predict(self, environment: AIEnvironment, data: List[dict]) -> List[dict]:
         """
-        Prepares data and performs prediction using the model associated with the specified environment.
+        Makes predictions based on provided data within a specified AI environment.
 
-        Important steps:
-        1. Download data files related to the task and store them in a temporary directory.
-        2. Retrieve the local model manager and perform the prediction using the loaded model.
-        3. Clean up the temporary directory after prediction.
+        The method first prepares the data by downloading the necessary files into a temporary
+        directory using the `download_data_files` method. Then, it retrieves the model manager
+        instance from `LocalEngineWorker._LocalModelManager` and performs the predictions.
+        After predictions are made, the temporary directory is cleaned up, and the predictions
+        are returned.
+
+        Steps:
+        1. Create a temporary directory to store any required data files.
+        2. Download the necessary data files using the `download_data_files` method.
+        3. Retrieve the model manager instance to handle the prediction process.
+        4. Use the model manager to predict the output based on the task UUID, environment, and data.
+        5. Clean up the temporary directory and return the prediction results.
 
         Args:
-            environment (AIEnvironment): The environment where the model is deployed.
-            data (List[dict]): A list of input data for prediction.
+            environment (AIEnvironment): The environment in which the prediction will be made.
+            data (List[dict]): A list of input data, where each dictionary represents an example to be predicted.
 
         Returns:
-            List[dict]: The predicted output from the model.
+            List[dict]: A list of dictionaries representing the predicted results for each input data.
         """
         # Prepare data (get files)
         tempdir = tempfile.TemporaryDirectory()
