@@ -513,6 +513,20 @@ class EngineWorker(abc.ABC):
         self.update_task_usage(cpu_hours=total_time,
                                gpu_hours=(training_end_time - training_start_time) if training_device == 'gpu' else 0)
 
+        # Set task status as active
+        self.update_task_status(code=TASK_ACTIVE_STATUS_CODE)
+
+        # If services are enabled, set them as active in a waiting status
+        service_settings = self.get_services_settings()
+        if service_settings.get('inference', {}).get('enabled', False):
+            self.update_inference_service_status(code=INFERENCE_WAITING_STATUS_CODE)
+        if service_settings.get('active_learning', {}).get('enabled', False):
+            self.update_active_learning_service_status(code=AL_WAITING_STATUS_CODE)
+        if service_settings.get('monitoring', {}).get('enabled', False):
+            self.update_monitoring_service_status(code=MONITORING_WAITING_STATUS_CODE)
+        if service_settings.get('testing', {}).get('enabled', False):
+            self.update_testing_service_status(code=TESTING_WAITING_STATUS_CODE)
+
         # Clean temp dirs
         working_dir.cleanup()
         data_dir.cleanup()
@@ -768,6 +782,31 @@ class EngineWorker(abc.ABC):
         Args:
             model_uuid (str): UUID of the model for which to update the monitoring templates.
             monitoring_templates (dict): Dictionary containing the monitoring templates.
+        """
+        pass
+
+    @abc.abstractmethod
+    def update_task_status(self, code: str):
+        """
+        Abstract method that defines the interface for updating the status of a task based on a
+        provided status code.
+
+        Args:
+            code (str): The status code that represents the new state or action for the task.
+        """
+        pass
+
+    @abc.abstractmethod
+    def get_services_settings(self) -> Dict[str, dict]:
+        """
+        Abstract method that defines the interface for retrieving the settings of the services
+        associated with the current task.
+
+        Implementations of this method should return a dictionary where each key is the service name and the value
+        is another dictionary containing the service's specific settings.
+
+        Returns:
+            Dict[str, dict]: A dictionary mapping service names to their respective settings.
         """
         pass
 
@@ -1403,6 +1442,36 @@ class LocalEngineWorker(EngineWorker):
 
         """
         return Service.filter_by_task_and_type(task_id=self._task_db_obj.task_id, type_=service_type)
+
+    def update_task_status(self, code: str):
+        """
+        Updates the status of a task based on the provided status code.
+
+        The method creates a new status object using the provided `code` by converting it
+        into a dictionary format and passing it to the `Status.from_dict` method.
+        The new status is then set for the task using the internal database object (`_task_db_obj`).
+
+        Args:
+            code (str): The status code that represents the new state or action for the task.
+        """
+        new_status = Status.from_dict({'code': code})
+        self._task_db_obj.set_status(new_status)
+
+    def get_services_settings(self) -> Dict[str, dict]:
+        """
+        Retrieves the settings of the services associated with the current task.
+
+        This method queries the `Service` model to filter services by the task's ID. It then constructs
+        a dictionary where the keys are the lowercase names of the service types, and the values are
+        the respective settings of each service obtained by converting the service objects to a dictionary
+        format.
+
+        Returns:
+            Dict[str, dict]: A dictionary mapping service names to their respective settings.
+        """
+        services = Service.filter_by_task(task_id=self._task_db_obj.task_id)
+        service_settings = {service.type_.name.lower(): service.to_dict()['settings'] for service in services}
+        return service_settings
 
     def update_inference_service_status(self, code: str, details: Optional[dict] = None):
         """
