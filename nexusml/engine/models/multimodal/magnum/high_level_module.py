@@ -11,8 +11,8 @@ class MultimodalGatedFusion(nn.Module):
                  input_dim,
                  n_modalities,
                  hidden_dim=None,
-                 gate_input_type="same",
-                 gate_output_type="sigmoid-vector"):
+                 gate_input_type='same',
+                 gate_output_type='sigmoid-vector'):
         """
         Default constructor.
 
@@ -31,20 +31,22 @@ class MultimodalGatedFusion(nn.Module):
         self.gate_output_type = gate_output_type
 
         # GATE
-        if self.gate_input_type == "same":
-            gate_input_dim = self.input_dim
-        elif self.gate_input_type == "all":
+        if self.gate_input_type == 'all':
             gate_input_dim = self.input_dim * self.n_modalities
+        else:
+            assert self.gate_input_type == 'same'
+            gate_input_dim = self.input_dim
 
-        if self.gate_output_type == "sigmoid-vector":
-            gate_act_fun = nn.Sigmoid()
-            gate_hidden_dim = self.hidden_dim
-        elif self.gate_output_type == "sigmoid-scalar":
+        if self.gate_output_type == 'sigmoid-scalar':
             gate_act_fun = nn.Sigmoid()
             gate_hidden_dim = 1
-        elif self.gate_output_type == "softmax-scalar":
+        elif self.gate_output_type == 'softmax-scalar':
             gate_act_fun = nn.Identity()
             gate_hidden_dim = 1
+        else:
+            assert self.gate_output_type == 'sigmoid-vector'
+            gate_act_fun = nn.Sigmoid()
+            gate_hidden_dim = self.hidden_dim
 
         self.gate = nn.ModuleList(
             nn.Sequential(nn.Linear(gate_input_dim, gate_hidden_dim), gate_act_fun) for _ in range(self.n_modalities))
@@ -60,14 +62,14 @@ class MultimodalGatedFusion(nn.Module):
 
         tanhs = [self.tanh[i](x[i]) for i in range(self.n_modalities)]
 
-        if self.gate_input_type == "all":
+        if self.gate_input_type == 'all':
             x_concat = torch.cat(x, dim=-1)
             gates = [self.gate[i](x_concat) for i in range(self.n_modalities)]
         else:
-            assert self.gate_input_type == "same"
+            assert self.gate_input_type == 'same'
             gates = [self.gate[i](x[i]) for i in range(self.n_modalities)]
 
-        if self.gate_output_type == "softmax-scalar":
+        if self.gate_output_type == 'softmax-scalar':
             out = (torch.cat(tanhs, dim=0) *
                    torch.cat(gates, dim=0).view(bs, self.n_modalities).softmax(dim=-1).view(-1, 1)).view(
                        self.n_modalities, bs, -1)

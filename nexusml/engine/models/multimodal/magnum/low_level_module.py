@@ -1,3 +1,5 @@
+from typing import List
+
 import numpy as np
 import torch
 import torch.nn as nn
@@ -5,9 +7,9 @@ from transformers import RobertaModel
 from transformers import ViTModel
 from transformers.pytorch_utils import apply_chunking_to_forward
 
-##############
-### Vision ###
-##############
+##########
+# Vision #
+##########
 
 
 class ViT(nn.Module):
@@ -63,10 +65,12 @@ class ViTForPromptTuning(nn.Module):
         self.attention_matrix = None
 
     def forward(self, image: torch.Tensor, prompt: torch.Tensor):
-        '''
-        image: [batch_size, 3, 224, 224]
-        prompt: [batch_size, n_deep, n_prompts, d_model]
-        '''
+        """
+        Forward pass
+        Args:
+            image (torch.Tensor): tensor of [batch_size, 3, 224, 224]
+            prompt (torch.Tensor): tensor of [batch_size, n_deep, n_prompts, d_model]
+        """
         x = self.model.embeddings(image)
 
         g = prompt[:, 0]
@@ -126,9 +130,9 @@ class ViTPromptBottleneck(nn.Module):
         Initialize the model.
 
         Args:
-            L (int): The number of tokens to keep.
-            deep (int): The number of deep layers to use.
-            deep_replace_method (str): The method to use for replacing the deep layers.
+            L (int): The number of tokens to keep in the prompt bottleneck.
+            deep (int): The number of deep layers to use in the `ViTForPromptTuning` model.
+            deep_replace_method (str): The method used to replace layers in the transformer, e.g., 'replace'.
         """
         super().__init__()
         self.L = L
@@ -138,6 +142,18 @@ class ViTPromptBottleneck(nn.Module):
         nn.init.xavier_uniform_(self.prompts.data)
 
     def forward(self, image: torch.Tensor, add_cls_token_output: bool = False, get_attention_matrix: bool = False):
+        """
+        Forward pass
+
+        Args:
+            image (torch.Tensor): Input image tensor of shape (batch_size, channels, height, width).
+            add_cls_token_output (bool): If True, includes the class token in the output.
+            get_attention_matrix (bool): If True, returns the attention matrix along with the model's output.
+
+        Returns:
+            torch.Tensor: The transformed output of the ViT model, with prompts integrated.
+            Optional[torch.Tensor]: The attention matrix if `get_attention_matrix` is True.
+        """
         bs = image.size(0)
         prompts = self.prompts.repeat(bs, 1, 1, 1)
         out = self.model(image, prompts)
@@ -150,9 +166,9 @@ class ViTPromptBottleneck(nn.Module):
         return out[:, :idx, :]
 
 
-################
-### Language ###
-################
+############
+# Language #
+############
 
 
 class RoBERTaPromptTuning(nn.Module):
@@ -170,9 +186,9 @@ class RoBERTaPromptTuning(nn.Module):
 
         Args:
             from_pretrained (str): The name of the pretrained model to load.
-            deep (int): The number of deep layers to use.
+            deep (int): The number of deep layers to inject or replace with prompts.
             deep_replace_method (str): The method to use for replacing the deep layers.
-            frozen (bool): Whether to freeze the model's parameters.
+            frozen (bool): Whether to freeze the model's parameters to prevent updates during training.
         """
         super().__init__()
         self.model = RobertaModel.from_pretrained(from_pretrained)
@@ -188,7 +204,17 @@ class RoBERTaPromptTuning(nn.Module):
         self.attention_matrix = None
 
     def forward_layer(self, x: torch.Tensor, attn_mask: torch.Tensor, layer_id: int = None):
-        """ Forward layer. """
+        """
+        Forward layer.
+
+        Args:
+            x (torch.Tensor): The input tensor to the layer.
+            attn_mask (torch.Tensor): The attention mask for the input data.
+            layer_id (int): The ID of the current layer to apply the transformation.
+
+        Returns:
+            torch.Tensor: The output of the layer after applying attention and feed-forward transformations.
+        """
         l = self.layers[layer_id]
 
         q = l.attention.self.query(x)
@@ -218,7 +244,17 @@ class RoBERTaPromptTuning(nn.Module):
         return x
 
     def forward(self, text_tokens: torch.LongTensor, attn_mask: torch.Tensor, prompt: torch.Tensor):
-        """ Forward pass of the model. """
+        """
+        Forward pass.
+
+        Args:
+            text_tokens (torch.LongTensor): The input tokenized text data.
+            attn_mask (torch.Tensor): The attention mask for the input data.
+            prompt (torch.Tensor): The prompt tensor to be inserted into the transformer layers.
+
+        Returns:
+            torch.Tensor: The output of the model after processing the text data and prompts.
+        """
 
         x = self.embedding_layer(text_tokens)
         g = prompt[:, 0]
@@ -248,8 +284,8 @@ class RoBERTaPromptBottleneck(nn.Module):
         Initialize the model.
 
         Args:
-            L (int): The number of tokens to keep.
-            deep (int): The number of deep layers to use.
+            L (int): The number of tokens to retain in the prompt bottleneck.
+            deep (int): The number of deep layers to use for prompt insertion.
             deep_replace_method (str): The method to use for replacing the deep layers.
         """
         super().__init__()
@@ -264,7 +300,19 @@ class RoBERTaPromptBottleneck(nn.Module):
                 attn_mask: torch.Tensor,
                 add_cls_token_output: bool = False,
                 get_attention_matrix: bool = False):
-        """ Forward pass of the model. """
+        """
+        Forward pass.
+
+        Args:
+            text_tokens (torch.LongTensor): The input tokenized text data.
+            attn_mask (torch.Tensor): The attention mask for the input data.
+            add_cls_token_output (bool): If True, includes the class token in the output.
+            get_attention_matrix (bool): If True, returns the attention matrix along with the output.
+
+        Returns:
+            torch.Tensor: The processed output of the model.
+            Optional[torch.Tensor]: The attention matrix if `get_attention_matrix` is True.
+        """
         bs = len(text_tokens)
         prompts = self.prompts.repeat(bs, 1, 1, 1)
         out = self.model(text_tokens, attn_mask, prompts)
@@ -277,9 +325,9 @@ class RoBERTaPromptBottleneck(nn.Module):
         return out[:, :idx, :]
 
 
-###############
-### Tabular ###
-###############
+###########
+# Tabular #
+###########
 
 
 class TabularMapper(nn.Module):
@@ -287,19 +335,15 @@ class TabularMapper(nn.Module):
     Tabular mapper.
     """
 
-    def __init__(self,
-                 d_model: float,
-                 n_num_vars: int = None,
-                 n_cat_vars: int = None,
-                 num_cat_vars_classes: int = None):
+    def __init__(self, d_model: int, n_num_vars: int = None, n_cat_vars: int = None, num_cat_vars_classes: List = None):
         """
         Initialize the model.
 
         Args:
-            d_model (float): The model's hidden size.
-            n_num_vars (int): The number of numerical variables.
-            n_cat_vars (int): The number of categorical variables.
-            num_cat_vars_classes (int): The number of classes for each categorical variable.
+            d_model (int): The model's hidden size, which determines the output dimension of each variable's projection.
+            n_num_vars (int): The number of numerical variables to be projected.
+            n_cat_vars (int): The number of categorical variables to be embedded.
+            num_cat_vars_classes (List[int]): A list containing the number of classes for each categorical variable.
         """
         super().__init__()
         self.d_model = d_model
@@ -313,7 +357,17 @@ class TabularMapper(nn.Module):
                 [nn.Embedding(num_cat_vars_classes[i], self.d_model) for i in range(n_cat_vars)])
 
     def forward(self, x_num: torch.Tensor = None, x_cat: torch.LongTensor = None, **kwargs):
-        """ Forward pass of the model. """
+        """
+        Forward pass.
+
+        Args:
+            x_num (torch.Tensor, optional): A tensor containing the numerical variables (batch_size, n_num_vars).
+            x_cat (torch.LongTensor, optional): A tensor containing the categorical variables (batch_size, n_cat_vars).
+
+        Returns:
+            torch.Tensor: A concatenated tensor of projected numerical and categorical variables, with each
+            variable projected into the model's hidden size.
+        """
         device = x_num.device if x_num is not None else x_cat.device
         x_num_proj = torch.cat([self.num_proj[i](x_num[:, i].view(-1, 1)).unsqueeze(1) for i in range(self.n_num_vars)],
                                dim=1) if self.n_num_vars is not None else torch.tensor([], device=device)

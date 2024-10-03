@@ -1,12 +1,3 @@
-'''
-
-1. Metadata + Fold ==> TrainMetadata, TestMetadata
-2. Generate Datasets
-3. Generate DataLoaders
-4. Train the model
-5. Evaluate the model
-
-'''
 from typing import Dict
 
 import numpy as np
@@ -14,10 +5,7 @@ import pandas as pd
 from torch.utils.data import Dataset
 
 from nexusml.engine.data.transforms.base import Transform
-from nexusml.engine.data.transforms.nlp.text import BasicNLPTransform
-from nexusml.engine.data.transforms.sklearn import LabelEncoderTransform
-from nexusml.engine.data.transforms.sklearn import StandardScalerTransform
-from nexusml.engine.data.transforms.vision.torchvision import BasicImageTransform
+from nexusml.engine.schema.base import Schema
 
 
 class MagnumDataset(Dataset):
@@ -26,6 +14,7 @@ class MagnumDataset(Dataset):
     """
 
     def __init__(self,
+                 schema: Schema,
                  df: pd.DataFrame,
                  input_transform_functions: Dict[str, Transform],
                  output_transform_functions: Dict[str, Transform],
@@ -39,6 +28,7 @@ class MagnumDataset(Dataset):
             output_transform_functions (Dict[str, Transform]): sequence of transformations to be applied to each target
             train (bool): if is for training (True) of for testing (False)
         """
+        self.schema = schema
         self.df = df
         self.input_transform_functions = input_transform_functions
         self.output_transform_functions = output_transform_functions
@@ -68,18 +58,17 @@ class MagnumDataset(Dataset):
         data = {}
         x_tabular = {'x_num': None, 'x_cat': None}
         for k, v in self.input_transform_functions.items():
-            # ToDo: find a more intuitive way to differenciate between text, image and tabular data
-            if isinstance(v, BasicImageTransform):
-                im = v.transform(self.df.iloc[item][k])
-                data['image'] = im
-            else:
-                im = v.transform(self.df.iloc[item:(item + 1)][k].to_numpy())
-            if isinstance(v, BasicNLPTransform):
-                data['text'] = im[0]
-            elif isinstance(v, StandardScalerTransform):
-                x_tabular['x_num'] = im if x_tabular['x_num'] is None else np.concatenate((x_tabular['x_num'], im))
-            elif isinstance(v, LabelEncoderTransform):
-                x_tabular['x_cat'] = im if x_tabular['x_cat'] is None else np.concatenate((x_tabular['x_cat'], im))
+            element = self.schema.get_inputs_by_name(input_name=k)[0]
+            if element['type'] == 'image_file':
+                data['image'] = v.transform(self.df.iloc[item][k])
+            elif element['type'] == 'text':
+                data['text'] = v.transform(self.df.iloc[item:(item + 1)][k].to_numpy())[0]
+            elif element['type'] in ['float', 'integer']:
+                x = v.transform(self.df.iloc[item:(item + 1)][k].to_numpy())
+                x_tabular['x_num'] = x if x_tabular['x_num'] is None else np.concatenate((x_tabular['x_num'], x))
+            elif element['type'] == 'category':
+                x = v.transform(self.df.iloc[item:(item + 1)][k].to_numpy())
+                x_tabular['x_cat'] = x if x_tabular['x_cat'] is None else np.concatenate((x_tabular['x_cat'], x))
 
         if any(value is not None for value in x_tabular.values()):
             data['tabular'] = x_tabular

@@ -23,24 +23,24 @@ from nexusml.engine.models.common.pytorch import _from_class_name_to_constructor
 from nexusml.engine.models.common.pytorch import _get_loss_function_from_config
 from nexusml.engine.models.common.pytorch import _join_torch_dict
 from nexusml.engine.models.common.pytorch import BasicLossFunction
-from nexusml.engine.models.multimodal.magnum_model.data_collator import MultimodalDataCollatorWithPadding
-from nexusml.engine.models.multimodal.magnum_model.low_level_module import RoBERTaPromptBottleneck
-from nexusml.engine.models.multimodal.magnum_model.low_level_module import TabularMapper
-from nexusml.engine.models.multimodal.magnum_model.low_level_module import ViTPromptBottleneck
-from nexusml.engine.models.multimodal.magnum_model.wrapper import BottomLevelModule
-from nexusml.engine.models.multimodal.magnum_model.wrapper import Magnum
-from nexusml.engine.models.multimodal.magnum_model.wrapper import TopLevelModule
+from nexusml.engine.models.multimodal.magnum.data_collator import MultimodalDataCollatorWithPadding
+from nexusml.engine.models.multimodal.magnum.low_level_module import RoBERTaPromptBottleneck
+from nexusml.engine.models.multimodal.magnum.low_level_module import TabularMapper
+from nexusml.engine.models.multimodal.magnum.low_level_module import ViTPromptBottleneck
+from nexusml.engine.models.multimodal.magnum.wrapper import BottomLevelModule
+from nexusml.engine.models.multimodal.magnum.wrapper import Magnum
+from nexusml.engine.models.multimodal.magnum.wrapper import TopLevelModule
 from nexusml.engine.models.utils import smooth
 from nexusml.engine.schema.base import Schema
 from nexusml.engine.schema.categories import Categories
+from nexusml.enums import TaskType
 
 
 class MagnumModule(nn.Module):
     """
-    Magnum classifier model
-    The model will extract features with base model and will pass the features to the classifiers
-    It will concatenate the inputs features and pass them to each classifier
-    It returns a list with the output of each classifier
+    Magnum module that encodes multiple modalities (tabular, vision, language), applies fusion, and outputs predictions
+    using classification or regression layers. The module handles tabular, vision, and language data separately at the
+    bottom level and fuses them at the top level before passing them through output layers.
     """
 
     def __init__(self,
@@ -56,12 +56,23 @@ class MagnumModule(nn.Module):
                  n_cat_vars: int = None,
                  num_cat_vars_classes: List = None):
         """
-        Constructor
+        Initializes the Magnum module.
+
+        The module processes tabular, vision, and language data, performs modality-specific encoding,
+        applies a fusion mechanism, and uses classification/regression layers to generate the final output.
+
         Args:
-            output_layers(Dict[str, nn.Module]): list of classifiers for each output of the model
-            output_naming_map (dict): a dict with the name mapping. The layer names (keys) are modified to delete
-                                    the points "." because they are not allowed. We have to reconvert the output name
-                                    to the original name
+            output_layers (nn.ModuleDict): A dictionary of output layers for each prediction task.
+            output_naming_map (dict): A mapping to rename the output layers.
+            d_model (int): The hidden size of the embeddings.
+            n_prompts (int): The number of prompt tokens to retain.
+            knn_k (int): The number of nearest neighbors for graph pooling.
+            gate_input_type (str): The input type for the gating mechanism in the fusion layer.
+            gate_output_type (str): The output type for the gating mechanism in the fusion layer.
+            modalities (list): The list of modalities (e.g., "tabular", "language", "vision").
+            n_num_vars (int): The number of numerical variables in the tabular data.
+            n_cat_vars (int): The number of categorical variables in the tabular data.
+            num_cat_vars_classes (List[int]): A list of class counts for each categorical variable in the tabular data.
         """
         super().__init__()
         self.output_layers = output_layers
@@ -106,7 +117,15 @@ class MagnumModule(nn.Module):
         self.magnum = Magnum(bottom_level_module, top_level_module)
 
     def forward(self, x):
-        """ Forward pass """
+        """
+        Forward pass.
+
+        Args:
+            x (dict): A dictionary containing the input data for each modality (tabular, image, and text).
+
+        Returns:
+            dict: The output of the model after applying the classification/regression heads.
+        """
         tab_data = x['tabular'] if 'tabular' in x else None
         vis_data = x['image'] if 'image' in x else None
         lan_data = x['text'] if 'text' in x else None
@@ -117,8 +136,8 @@ class MagnumModule(nn.Module):
 
 class MagnumModel(Model):
     """
-    Magnum model for vision, text and tabular
-    It transforms data, create datasets and trains the given model
+    Magnum model for vision, text, and tabular data.
+    It handles data transformation, dataset creation, model setup, training, and prediction for multimodal tasks.
     """
 
     def __init__(self,
@@ -130,17 +149,16 @@ class MagnumModel(Model):
                  output_transforms: ElementTransforms,
                  inference_mode: bool = False):
         """
-        Constructor
+        Initializes the MagnumModel with the provided configuration, transformations, and schema.
+
         Args:
-            schema(Schema): schema of the task
-            categories (Categories): the possible values for categorical features
-            model_config (Dict): the configuration to be used for model construction
-            dataframe_transforms (DataFrameTransforms): global transformation that are applied to whole DataFrame
-            input_transforms(ElementTransforms): transformations for input columns
-            output_transforms(ElementTransforms): transformations for output columns
-            inference_mode (bool): argument that allows us to create the model as inference mode so the schema
-                                and model configuration won't be needed. In this mode, we only will be able
-                                to call predict method (cannot fit the model)
+            schema (Schema): The schema of the task, describing inputs, outputs, and their types.
+            model_config (Dict): Configuration dict for model construction, containing setup functions and arguments.
+            categories (Categories): Possible values for categorical features.
+            dataframe_transforms (DataFrameTransforms): Global transformations applied to the entire DataFrame.
+            input_transforms (ElementTransforms): Transformations applied to input columns.
+            output_transforms (ElementTransforms): Transformations applied to output columns.
+            inference_mode (bool): If True, the model is set to inference mode.
         """
         super().__init__(schema=schema,
                          categories=categories,
@@ -155,15 +173,17 @@ class MagnumModel(Model):
 
     def _setup_model(self):
         """
-        Function called to set up the model using the configuration given in the constructor
-        Returns:
+        Sets up the MAGNUM model using the configuration provided in the constructor.
+        It retrieves the setup function and arguments from the model configuration and initializes the PyTorch model.
 
+        Raises:
+            ConfigFileError: If required setup keys are missing in the model configuration.
         """
         # 'setup_function' and 'setup_args' are required
         if 'setup_function' not in self.model_config:
-            raise ConfigFileError("'setup_function' key missing")
+            raise ConfigFileError('"setup_function" key missing')
         if 'setup_args' not in self.model_config:
-            raise ConfigFileError("'setup_args' key missing")
+            raise ConfigFileError('"setup_args" key missing')
         # Get setup function callable
         setup_function = _from_class_name_to_constructor(self.model_config['setup_function'])
         # Create the PyTorch model using the previously built function
@@ -178,17 +198,15 @@ class MagnumModel(Model):
             valid_data: Union[pd.DataFrame, dict, List[dict]] = None,
             train_args: Dict = None) -> TrainingOutputInfo:
         """
-        Model's fit
+        Trains the MAGNUM model using the provided training data and arguments.
+
         Args:
-            train_data (Union[pd.DataFrame, dict, List[dict]]): train data that could be a DataFrame, a single example
-                                                            as dict, or a list of dict examples
-            valid_data (Union[pd.DataFrame, dict, List[dict]]): validation data that could be a DataFrame, a
-                                                                single example as dict, or a list of dict examples
-            train_args (Dict): dict with extra arguments for training like number of epochs.
-                            Required keys: 'batch_size' and 'epochs'
+            train_data (Union[pd.DataFrame, dict, List[dict]]): The training data in DataFrame or dict format.
+            valid_data (Union[pd.DataFrame, dict, List[dict]], optional): The validation data.
+            train_args (Dict): Training arguments such as batch size, epochs, etc.
 
         Returns:
-            TrainingOutputInfo filled with the train history figures for each output
+            TrainingOutputInfo: Contains the training history and figures of the loss curves.
         """
         if isinstance(train_data, dict) or isinstance(train_data, list):
             train_data = Model.examples_to_dataframe(train_data)
@@ -220,13 +238,17 @@ class MagnumModel(Model):
         # Get training device. 'cuda' if GPU is available. 'cpu' otherwise
         device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-        train_ds = MagnumDataset(df=train_data,
+        train_ds = MagnumDataset(schema=self.schema,
+                                 df=train_data,
                                  input_transform_functions=self.input_transforms.element_transform_map,
                                  output_transform_functions=self.output_transforms.element_transform_map,
                                  train=True)
-        text_input = [inp for inp in self.schema.inputs if inp['type'] == 'text']
-        dc = MultimodalDataCollatorWithPadding(
-            text_transform=self.input_transforms.element_transform_map[text_input[0]['name']])
+        # Get the text type input element (only one allowed)
+        text_input = [inp for inp in self.schema.inputs if inp['type'] == 'text'][0]
+        # Get the tokenizer
+        tokenizer = self.input_transforms.element_transform_map[text_input['name']].tokenizer_transform.tokenizer
+        # Create Data Collator
+        dc = MultimodalDataCollatorWithPadding(tokenizer=tokenizer)
         num_workers = train_args['num_workers'] if 'num_workers' in train_args else 0
         # Only drop last if there is more than one batch on Dataset
         drop_last = len(train_ds) > train_args['batch_size']
@@ -292,20 +314,16 @@ class MagnumModel(Model):
                 split_predictions_by_output: bool = False,
                 train_args: dict = None) -> Union[Dict, List]:
         """
-        Function called to make predictions on the given data
+        Generates predictions from the input data using the trained MAGNUM model.
+
         Args:
-            data (Union[pd.DataFrame, dict, List[dict]]): data that could be a DataFrame, a single example
-                                                    as dict, or a list of dict examples
-            split_predictions_by_output (bool): if False, a list will be returned with the NexusML example format
-                                                if True, a dict will be returned with one key per output with the
-                                                predictions as value
-            train_args (Dict): dict with extra arguments for training. It is used to get the
-                            'batch_size' and create the DataLoader. If not given, batch_size=1 will be used
+            data (Union[pd.DataFrame, dict, List[dict]]): Input data in DataFrame or dict format.
+            split_predictions_by_output (bool): If True, returns a dict with separate predictions per output,
+                                                otherwise returns a list of predictions.
+            train_args (dict, optional): Training arguments for DataLoader creation.
 
         Returns:
-            It can be one of this two:
-                - List of predictions following the NexusML example format (if split_predictions_by_output is False)
-                - Dict with the prediction for each output element (if split_predictions_by_output is True)
+            Union[Dict, List]: Predictions either as a dict (split by output) or as a list in predictions format.
         """
         if isinstance(data, dict) or isinstance(data, list):
             data = Model.examples_to_dataframe(data)
@@ -320,7 +338,8 @@ class MagnumModel(Model):
         # Transform input data
         data = self.dataframe_transforms.transform(data)
 
-        ds = MagnumDataset(df=data,
+        ds = MagnumDataset(schema=self.schema,
+                           df=data,
                            input_transform_functions=self.input_transforms.element_transform_map,
                            output_transform_functions=self.output_transforms.element_transform_map,
                            train=False)
@@ -330,9 +349,12 @@ class MagnumModel(Model):
 
         bs = 1 if train_args is None or 'batch_size' not in train_args else train_args['batch_size']
         num_workers = 0 if train_args is None or 'num_workers' not in train_args else train_args['num_workers']
-        text_input = [inp for inp in self.schema.inputs if inp['type'] == 'text']
-        dc = MultimodalDataCollatorWithPadding(
-            text_transform=self.input_transforms.element_transform_map[text_input[0]['name']])
+        # Get the text type input element (only one allowed)
+        text_input = [inp for inp in self.schema.inputs if inp['type'] == 'text'][0]
+        # Get the tokenizer
+        tokenizer = self.input_transforms.element_transform_map[text_input['name']].tokenizer_transform.tokenizer
+        # Create Data Collator
+        dc = MultimodalDataCollatorWithPadding(tokenizer=tokenizer)
         dl = DataLoader(ds, batch_size=bs, drop_last=False, shuffle=False, collate_fn=dc, num_workers=num_workers)
         predictions = basic_predict_loop_magnum(model=self.magnum_model, dl=dl, device=device)
         predictions = self.output_transforms.inverse_transform(predictions)
@@ -384,8 +406,8 @@ class MagnumModel(Model):
         If the given input file is string, it will be the path from where read the object
         If is not a string, it will be a file descriptor (opened file, IO buffer, etc.) from where read the object
         Args:
-            schema (Schema): schema used for training the model
             input_file (Union[str, IO]): input file path or input buffer/descriptor from where read object
+            schema (Schema): schema used for training the model
             input_transforms (ElementTransforms): input transforms already load that mau be needed for creating model
             output_transforms (ElementTransforms): output transforms already load that mau be needed for creating model
             dataframe_transforms (DataFrameTransforms): dataframe transforms already load that mau be needed for
@@ -436,18 +458,25 @@ class MagnumModel(Model):
         return str(self.magnum_model)
 
 
-def _build_model(clfs: nn.ModuleDict, output_naming_map: dict, d_model: int, inputs_info: List[Dict],
+def _build_model(classifiers: nn.ModuleDict, output_naming_map: dict, d_model: int, inputs_info: List[Dict],
                  input_transforms: ElementTransforms) -> MagnumModule:
     """
-    Function that builds a model from a base model and a list of classifier heads
+    Builds a MAGNUM model by processing the input modalities and creating classifier heads for the outputs.
+
+    This function identifies the modalities (vision, tabular, language) from the input information and
+    creates the corresponding MagnumModule with the specified number of numerical and categorical variables
+    for the tabular data. It also sets up classifier heads for each output of the model.
+
     Args:
-        clfs(ModuleDict): ModuleDict containing as many classifier heads as number of outputs of the model
-        output_naming_map (dict): a dict with the name mapping. The layer names (keys) are modified to delete
-                                    the points "." because they are not allowed. We have to reconvert the output name
-                                    to the original name
+        classifiers (nn.ModuleDict): A ModuleDict containing classifier heads for each model output.
+        output_naming_map (dict): A mapping that reverts sanitized layer names (e.g., names without ".")
+                                  back to the original names.
+        d_model (int): The hidden size of the model.
+        inputs_info (List[Dict]): Information about the model's inputs, including types and names.
+        input_transforms (ElementTransforms): Transformations applied to each input element.
 
     Returns:
-        MagnumModule: constructed model
+        MagnumModule: A constructed MagnumModule with the configured modalities and classifier heads.
     """
     modalities = []
     for i in range(len(inputs_info)):
@@ -472,7 +501,7 @@ def _build_model(clfs: nn.ModuleDict, output_naming_map: dict, d_model: int, inp
                          n_num_vars=n_num_vars,
                          n_cat_vars=n_cat_vars,
                          num_cat_vars_classes=num_cat_vars_classes,
-                         output_layers=clfs,
+                         output_layers=classifiers,
                          output_naming_map=output_naming_map,
                          d_model=d_model)
     return model
@@ -483,34 +512,35 @@ def create_magnum_model(inputs_info: List[Dict],
                         input_transforms: ElementTransforms,
                         output_transforms: ElementTransforms,
                         emb_size: int,
+                        d_model: int,
                         dropout_p1: float = None,
                         dropout_p2: float = None,
-                        d_model: int = 256,
                         **kwargs: dict) -> MagnumModule:
     """
-    Function that creates a MAGNUM model.
-    It removes the default classifier head and adds as many classifier heads as number of outputs of the model
+    Creates a MAGNUM model by setting up the output classifier heads and building the core model.
+
     Args:
-        inputs_info (List[Dict]): inputs of the model
-        outputs_info (List[Dict]): outputs of the model
-        output_transforms (ElementTransforms): transformations that are applied on each output element
-        emb_size (int): embedding size
-        dropout_p1 (float): probability for first dropout layer
-        dropout_p2 (float): probability for second dropout layer
-        **kwargs(dict): arguments for the ResNet model
+        inputs_info (List[Dict]): Information about the model's inputs.
+        outputs_info (List[Dict]): Information about the model's outputs.
+        input_transforms (ElementTransforms): Transformations applied to input elements.
+        output_transforms (ElementTransforms): Transformations applied to output elements.
+        emb_size (int): The size of the embedding layer.
+        d_model (int): The hidden size for the model layers.
+        dropout_p1 (float, optional): Dropout probability for the first dropout layer.
+        dropout_p2 (float, optional): Dropout probability for the second dropout layer.
+        kwargs (dict): Additional arguments for model configuration.
 
     Returns:
-        MagnumModule
+        MagnumModule: The constructed MAGNUM model with classifier heads and configured modalities.
     """
-    # ToDo: set d_model by config
-    clfs, name_mapping = _setup_output_layers(last_num_feat=d_model,
-                                              outputs_info=outputs_info,
-                                              output_transforms=output_transforms,
-                                              emb_size=emb_size,
-                                              dropout_p1=dropout_p1,
-                                              dropout_p2=dropout_p2)
+    classifiers, name_mapping = _setup_output_layers(last_num_feat=d_model,
+                                                     outputs_info=outputs_info,
+                                                     output_transforms=output_transforms,
+                                                     emb_size=emb_size,
+                                                     dropout_p1=dropout_p1,
+                                                     dropout_p2=dropout_p2)
 
-    return _build_model(clfs=clfs,
+    return _build_model(classifiers=classifiers,
                         output_naming_map=name_mapping,
                         d_model=d_model,
                         inputs_info=inputs_info,
@@ -578,7 +608,10 @@ def _get_scheduler_from_config(scheduler_config: Dict):
 
 class ClassificationOutputLayer(nn.Module):
     """
-    Classification head
+    Classification head for the MAGNUM model.
+
+    This layer applies batch normalization, dropout, and linear transformations to the input features,
+    followed by a softmax activation function during evaluation to produce class probabilities.
     """
 
     def __init__(self,
@@ -588,13 +621,15 @@ class ClassificationOutputLayer(nn.Module):
                  dropout_p_1: float = 0.25,
                  dropout_p_2: float = 0.5):
         """
-        Constructor
+        Initializes the classification output layer with two dropout layers, two batch normalization layers,
+        and a final softmax output for classification.
+
         Args:
-            input_features(int): number of input features
-            num_classes(int): number of classes
-            emb_size(int): embedding size
-            dropout_p_1(float): dropout probability for first dropout layer
-            dropout_p_2(float): dropout probability for second dropout layer
+            input_features (int): The number of input features.
+            num_classes (int): The number of output classes.
+            emb_size (int): The size of the embedding layer.
+            dropout_p_1 (float): The dropout probability for the first dropout layer.
+            dropout_p_2 (float): The dropout probability for the second dropout layer.
         """
         super().__init__()
         self.bn1 = nn.BatchNorm1d(input_features)
@@ -607,7 +642,16 @@ class ClassificationOutputLayer(nn.Module):
         self.softmax = nn.Softmax(dim=1)
 
     def forward(self, x):
-        """ Forward pass """
+        """
+        Forward pass.
+
+        Args:
+            x (torch.Tensor): Input tensor of shape (batch_size, input_features).
+
+        Returns:
+            torch.Tensor: Output tensor of shape (batch_size, num_classes), containing logits during training
+            or softmax probabilities during evaluation.
+        """
         x = self.bn1(x)
         x = self.dropout1(x)
         x = self.linear1(x)
@@ -622,17 +666,22 @@ class ClassificationOutputLayer(nn.Module):
 
 class RegressionOutputLayer(nn.Module):
     """
-    Regression head
+    Regression head for the MAGNUM model.
+
+    This layer applies batch normalization, dropout, and linear transformations to the input features
+    and produces a single output for regression tasks.
     """
 
     def __init__(self, input_features: int, emb_size: int = 512, dropout_p_1: float = 0.25, dropout_p_2: float = 0.5):
         """
-        Constructor
+        Initializes the regression output layer with two dropout layers, two batch normalization layers,
+        and a final linear layer for regression output.
+
         Args:
-            input_features(int): number of input features
-            emb_size(int): embedding size
-            dropout_p_1(float): dropout probability for first dropout layer
-            dropout_p_2(float): dropout probability for second dropout layer
+            input_features (int): The number of input features.
+            emb_size (int): The size of the embedding layer.
+            dropout_p_1 (float): The dropout probability for the first dropout layer.
+            dropout_p_2 (float): The dropout probability for the second dropout layer.
         """
         super().__init__()
         self.bn1 = nn.BatchNorm1d(input_features)
@@ -644,7 +693,15 @@ class RegressionOutputLayer(nn.Module):
         self.out = nn.Linear(in_features=emb_size, out_features=1, bias=True)
 
     def forward(self, x):
-        """ Forward pass """
+        """
+        Forward pass.
+
+        Args:
+            x (torch.Tensor): Input tensor of shape (batch_size, input_features).
+
+        Returns:
+            torch.Tensor: Output tensor of shape (batch_size, 1), containing the regression output.
+        """
         x = self.bn1(x)
         x = self.dropout1(x)
         x = self.linear1(x)
@@ -662,17 +719,22 @@ def _setup_output_layers(last_num_feat: int,
                          dropout_p1: float = None,
                          dropout_p2: float = None) -> Tuple[nn.ModuleDict, dict]:
     """
-    Function that creates the model heads for each output
+    Creates model heads for each output based on the output type (regression or classification).
+
+    This function builds output layers (heads) for each output defined in the `outputs_info` using
+    either regression or classification layers, depending on the output type. It also handles a name
+    mapping since PyTorch `ModuleDict` does not allow keys with dots in the name.
+
     Args:
-        last_num_feat(int): number of input features for the head
-        outputs_info(List[Dict]): outputs information
-        output_transforms (ElementTransforms): the transformations that are applied to output elements
-        emb_size(int): embedding size
-        dropout_p1(float): dropout probability for first dropout layer
-        dropout_p2(float): dropout probability for second dropout layer
+        last_num_feat (int): The number of input features for the output head.
+        outputs_info (List[Dict]): A list of dictionaries containing information about each output.
+        output_transforms (ElementTransforms): Transformations applied to the output elements.
+        emb_size (int): The size of the embedding layer.
+        dropout_p1 (float, optional): Dropout probability for the first dropout layer.
+        dropout_p2 (float, optional): Dropout probability for the second dropout layer.
 
     Returns:
-        nn.ModuleDict where the key is the output id and the value a PyTorch module
+        Tuple[nn.ModuleDict, dict]: A `ModuleDict` with output heads and a name mapping for outputs.
     """
     output_layers = {}
     # Name mapping (points "." are not allowed on nn.ModuleDict, so we replace them)
@@ -705,18 +767,21 @@ def create_multimodal_magnum_model(schema: Schema,
                                    dropout_p2: float = None,
                                    **kwargs: dict) -> MagnumModule:
     """
-    Creates MAGNUM model
+    Creates a MAGNUM model configured for multimodal input and output tasks.
+
+    This function initializes the MAGNUM model by processing the task schema and setting up
+    the model with the appropriate input and output transformations, embedding sizes, and dropout layers.
 
     Args:
-        schema (Schema): task schema
-        input_transforms (ElementTransforms): Transforms for input columns
-        output_transforms (ElementTransforms): Transforms for output columns
-        emb_size (int): embedding size
-        dropout_p1 (float): probability for first dropout layer
-        dropout_p2 (float): probability for second dropout layer
+        schema (Schema): The task schema containing input and output information.
+        input_transforms (ElementTransforms): Transformations applied to input columns.
+        output_transforms (ElementTransforms): Transformations applied to output columns.
+        emb_size (int): The size of the embedding layer.
+        dropout_p1 (float, optional): Dropout probability for the first dropout layer.
+        dropout_p2 (float, optional): Dropout probability for the second dropout layer.
 
     Returns:
-        MagnumModule: MAGNUM model
+        MagnumModule: The constructed MAGNUM model.
     """
     magnum_model = create_magnum_model(inputs_info=schema.inputs,
                                        outputs_info=schema.outputs,
