@@ -28,6 +28,7 @@ from nexusml.engine.models.common.pytorch import BasicLossFunction
 from nexusml.engine.models.utils import smooth
 from nexusml.engine.schema.base import Schema
 from nexusml.engine.schema.categories import Categories
+from nexusml.enums import TaskType
 
 
 def _setup_embedding_input_layer(inputs_info: List[Dict],
@@ -676,6 +677,101 @@ class PytorchTabularModel(Model):
             return predictions
         else:
             return predictions_to_example_format(predictions=predictions, output_transforms=self.output_transforms)
+
+    @classmethod
+    def supports_schema(cls, schema: Schema) -> bool:
+        """
+        Determine if the model can run given a specific schema.
+
+        This method checks whether the current model is compatible with the provided
+        schema. It inspects the schema and returns True if the model can successfully
+        run with the provided schema, or False otherwise.
+
+        Args:
+            schema (Schema): The schema object to validate against the model.
+
+        Returns:
+            bool: True if the model can run with the provided schema, False otherwise.
+        """
+        if schema.task_type not in [TaskType.CLASSIFICATION, TaskType.REGRESSION]:
+            return False
+        for i in schema.inputs:
+            if i['type'] not in ['boolean', 'integer', 'float', 'category']:
+                return False
+        return True
+
+    @classmethod
+    def get_default_configs(cls) -> List[dict]:
+        """
+        Retrieve all possible default configurations for the model.
+
+        This method returns a list of dictionaries representing various default
+        configurations that the model supports.
+
+        Args:
+            None.
+
+        Returns:
+            List[dict]: A list of dictionaries, each representing a different default
+            configuration supported by the model.
+        """
+        input_transforms = {
+            'global': {
+                'float': {
+                    'class': 'nexusml.engine.data.transforms.sklearn.StandardScalerTransform',
+                    'args': None
+                },
+                'category': {
+                    'class': 'nexusml.engine.data.transforms.sklearn.OrdinalEncoderTransform',
+                    'args': None
+                }
+            },
+            'specific': None
+        }
+        output_transforms = {
+            'global': {
+                'float': {
+                    'class': 'nexusml.engine.data.transforms.sklearn.MinMaxScalerTransform',
+                    'args': None
+                },
+                'category': {
+                    'class': 'nexusml.engine.data.transforms.sklearn.LabelEncoderTransform',
+                    'args': None
+                }
+            },
+            'specific': None
+        }
+        dataframe_transforms = [{
+            'class': 'nexusml.engine.data.transforms.sklearn.SelectRequiredElements',
+            'args': {
+                'shapes': False
+            }
+        }, {
+            'class': 'nexusml.engine.data.transforms.sklearn.DropNaNValues',
+            'args': None
+        }, {
+            'class': 'nexusml.engine.data.transforms.sklearn.SimpleMissingValueImputation',
+            'args': None
+        }]
+        return [{
+            'transforms': {
+                'input_transforms': input_transforms,
+                'output_transforms': output_transforms
+            },
+            'dataframe_transforms': dataframe_transforms,
+            'model': {
+                'class': 'nexusml.engine.models.tabular.pytorch.PytorchTabularModel',
+                'args': {
+                    'setup_function': 'nexusml.engine.models.tabular.pytorch.create_pytorch_embedding_module',
+                    'setup_args': {
+                        'emb_size': 512,
+                        'features_per_layer': (100, 50, 10),
+                        'batch_norm': True,
+                        'dropout_p': 0.5
+                    }
+                }
+            }
+        }]
 
     def save_model(self, output_file: Union[str, IO]):
         """

@@ -27,6 +27,7 @@ from nexusml.engine.models.common.pytorch import BasicLossFunction
 from nexusml.engine.models.utils import smooth
 from nexusml.engine.schema.base import Schema
 from nexusml.engine.schema.categories import Categories
+from nexusml.enums import TaskType
 
 
 def _get_default_optimizer(train_args: Dict = None):
@@ -254,6 +255,104 @@ class CustomWav2Vec2ModelForClassification(Model):
             return predictions
         else:
             return predictions_to_example_format(predictions=predictions, output_transforms=self.output_transforms)
+
+    @classmethod
+    def supports_schema(cls, schema: Schema) -> bool:
+        """
+        Determine if the model can run given a specific schema.
+
+        This method checks whether the current model is compatible with the provided
+        schema. It inspects the schema and returns True if the model can successfully
+        run with the provided schema, or False otherwise.
+
+        Args:
+            schema (Schema): The schema object to validate against the model.
+
+        Returns:
+            bool: True if the model can run with the provided schema, False otherwise.
+        """
+        if schema.task_type not in [TaskType.CLASSIFICATION, TaskType.REGRESSION]:
+            return False
+        for i in schema.inputs:
+            if i['type'] != 'audio_file':
+                return False
+        return True
+
+    @classmethod
+    def get_default_configs(cls) -> List[dict]:
+        """
+        Retrieve all possible default configurations for the model.
+
+        This method returns a list of dictionaries representing various default
+        configurations that the model supports.
+
+        Args:
+            None.
+
+        Returns:
+            List[dict]: A list of dictionaries, each representing a different default
+            configuration supported by the model.
+        """
+        return [{
+            'dataframe_transforms': [{
+                'class': 'nexusml.engine.data.transforms.sklearn.SelectRequiredElements',
+                'args': {
+                    'select_shapes': False
+                },
+            }, {
+                'class': 'nexusml.engine.data.transforms.sklearn.DropNaNValues',
+                'args': None
+            }],
+            'model': {
+                'class': 'nexusml.engine.models.audio.wav2vec2.CustomWav2Vec2ModelForClassification',
+                'args': {
+                    'pretrained_kwargs': {
+                        'pretrained_model_name_or_path': 'facebook/wav2vec2-xls-r-300m'
+                    },
+                    'setup_args': {
+                        'dropout_p1': 0.25
+                    },
+                    'setup_function': 'nexusml.engine.models.audio.wav2vec2.create_speech_classification_model'
+                }
+            },
+            'training': {
+                'batch_size': 8,
+                'epochs': 25,
+                'loss_function': {
+                    'class': 'nexusml.engine.models.common.pytorch.BasicLossFunction',
+                    'args': None
+                },
+                'lr': 0.005,
+                'num_workers': 0
+            },
+            'transforms': {
+                'input_transforms': {
+                    'global': {
+                        'audio_file': {
+                            'class': 'nexusml.engine.data.transforms.audio.speech.DefaultSpeechTransform',
+                            'args': {
+                                'path': 'facebook/wav2vec2-xls-r-300m',
+                                'target_sr': 16000
+                            },
+                        }
+                    },
+                    'specific': None
+                },
+                'output_transforms': {
+                    'global': {
+                        'category': {
+                            'class': 'nexusml.engine.data.transforms.sklearn.LabelEncoderTransform',
+                            'args': None
+                        },
+                        'float': {
+                            'class': 'nexusml.engine.data.transforms.sklearn.MinMaxScalerTransform',
+                            'args': None
+                        }
+                    },
+                    'specific': None
+                }
+            }
+        }]
 
     def summary(self) -> Optional[str]:
         return str(self.transformers_model)

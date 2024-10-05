@@ -1,6 +1,7 @@
 # TODO: Try to make this module independent from `nexusml.api`
 
 import abc
+import copy
 from datetime import datetime
 import json
 import os
@@ -10,13 +11,14 @@ import tempfile
 import threading
 import time
 import traceback
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 import zipfile
 
 import psutil
 from sklearn.model_selection import train_test_split
 from sqlalchemy import and_ as sql_and
 import torch
+import yaml
 
 from nexusml.api.resources.ai import AIModel
 from nexusml.api.resources.base import dump
@@ -42,30 +44,27 @@ from nexusml.database.services import ServiceType
 from nexusml.database.tasks import CategoryDB
 from nexusml.database.tasks import ElementDB
 from nexusml.database.tasks import TaskDB
-from nexusml.engine.config.audio.default_configs import generate_pytorch_audio_classification_model_configs
-from nexusml.engine.config.multimodal.default_configs import generate_multimodal_classification_model_configs
-from nexusml.engine.config.nlp.default_configs import generate_pytorch_nlp_classification_model_configs
-from nexusml.engine.config.tabular.default_configs import generate_pytorch_model_configs
-from nexusml.engine.config.tabular.default_configs import generate_sklearn_default_configs
-from nexusml.engine.config.vision.default_configs import generate_pytorch_vision_classification_model_configs
-from nexusml.engine.config.vision.default_configs import generate_pytorch_vision_detection_model_configs
-from nexusml.engine.config.vision.default_configs import generate_pytorch_vision_segmentation_model_configs
 from nexusml.engine.experiments.run import retrain_model
 from nexusml.engine.experiments.run import run_experiment_from_config_file
 from nexusml.engine.experiments.tracking.mlflow import get_best_model
 from nexusml.engine.models.base import Model
-from nexusml.engine.schema.base import get_pipeline_type
-from nexusml.engine.schema.base import PipelineType
+from nexusml.engine.models.utils import discover_models
+from nexusml.engine.schema.base import Schema
 from nexusml.engine.services.monitoring import MonitoringService
 from nexusml.enums import AIEnvironment
 from nexusml.enums import ElementType
 from nexusml.enums import EngineType
 from nexusml.enums import FileStorageBackend
 from nexusml.enums import LabelingStatus
+from nexusml.statuses import AL_WAITING_STATUS_CODE
 from nexusml.statuses import CL_INITIALIZING_TRAINING_STATUS_CODE
 from nexusml.statuses import CL_TRAINING_STATUS_CODE
 from nexusml.statuses import CL_WAITING_STATUS_CODE
+from nexusml.statuses import INFERENCE_WAITING_STATUS_CODE
+from nexusml.statuses import MONITORING_WAITING_STATUS_CODE
 from nexusml.statuses import Status
+from nexusml.statuses import TASK_ACTIVE_STATUS_CODE
+from nexusml.statuses import TESTING_WAITING_STATUS_CODE
 from nexusml.utils import get_s3_config
 from nexusml.utils import s3_client
 
@@ -277,119 +276,51 @@ class EngineWorker(abc.ABC):
             Exception: If the pipeline type is unknown.
         """
         # Get Task Schema
-        task_schema = self.get_task_schema()
+        task_schema = Schema.create_schema_from_dict(self.get_task_schema())
 
-        pipeline_type = get_pipeline_type(task_schema=task_schema)
-        # If it is unknown, the model is not trainable from scratch
-        is_trainable = pipeline_type != PipelineType.UNKNOWN
-        # If it is not trainable, raise ValueError
-        if not is_trainable:
+        # Get candidate models
+        candidate_models = list(filter(lambda x: x.supports_schema(schema=task_schema), discover_models()))
+
+        # If there are no candidate models, the schema is no trainable from scratch
+        if len(candidate_models) == 0:
             raise ValueError('The schema is not trainable from scratch')
 
         mlflow_uri = 'file:///' + os.path.join(data_dir, 'mlruns').replace('\\', '/')
 
-        # Create config files based on pipeline type
-        if pipeline_type == PipelineType.TABULAR_CLASSIFICATION_REGRESSION:
-            generate_sklearn_default_configs(output_path=working_dir,
-                                             schema_path=paths['schema_path'],
-                                             train_data=paths['train_data_path'],
-                                             test_data=paths['test_data_path'],
-                                             experiment_name='exp1',
-                                             experiment_save_path=mlflow_uri,
-                                             save_figures=False,
-                                             save_predictions=False,
-                                             categories_path=paths['categories_path'],
-                                             seed=0)
-            generate_pytorch_model_configs(output_path=working_dir,
-                                           schema_path=paths['schema_path'],
-                                           train_data=paths['train_data_path'],
-                                           test_data=paths['test_data_path'],
-                                           experiment_name='exp1',
-                                           experiment_save_path=mlflow_uri,
-                                           save_figures=False,
-                                           save_predictions=False,
-                                           categories_path=paths['categories_path'],
-                                           seed=0)
-        elif pipeline_type == PipelineType.IMAGE_CLASSIFICATION_REGRESSION:
-            generate_pytorch_vision_classification_model_configs(output_path=working_dir,
-                                                                 schema_path=paths['schema_path'],
-                                                                 train_data=paths['train_data_path'],
-                                                                 test_data=paths['test_data_path'],
-                                                                 experiment_name='exp1',
-                                                                 experiment_save_path=mlflow_uri,
-                                                                 save_figures=False,
-                                                                 save_predictions=False,
-                                                                 categories_path=paths['categories_path'],
-                                                                 seed=0)
-        elif pipeline_type == PipelineType.OBJECT_DETECTION:
-            generate_pytorch_vision_detection_model_configs(output_path=working_dir,
-                                                            schema_path=paths['schema_path'],
-                                                            train_data=paths['train_data_path'],
-                                                            test_data=paths['test_data_path'],
-                                                            experiment_name='exp1',
-                                                            experiment_save_path=mlflow_uri,
-                                                            save_figures=False,
-                                                            save_predictions=False,
-                                                            categories_path=paths['categories_path'],
-                                                            seed=0)
-        elif pipeline_type == PipelineType.OBJECT_DETECTION:
-            generate_pytorch_vision_segmentation_model_configs(output_path=working_dir,
-                                                               schema_path=paths['schema_path'],
-                                                               train_data=paths['train_data_path'],
-                                                               test_data=paths['test_data_path'],
-                                                               experiment_name='exp1',
-                                                               experiment_save_path=mlflow_uri,
-                                                               save_figures=False,
-                                                               save_predictions=False,
-                                                               categories_path=paths['categories_path'],
-                                                               seed=0)
-        elif pipeline_type == PipelineType.NLP_CLASSIFICATION_REGRESSION:
-            generate_pytorch_nlp_classification_model_configs(output_path=working_dir,
-                                                              schema_path=paths['schema_path'],
-                                                              train_data=paths['train_data_path'],
-                                                              test_data=paths['test_data_path'],
-                                                              experiment_name='exp1',
-                                                              experiment_save_path=mlflow_uri,
-                                                              save_figures=False,
-                                                              save_predictions=False,
-                                                              categories_path=paths['categories_path'],
-                                                              seed=0)
+        # Generate the default configs for the candidate models
+        config_file_paths = []
+        idx = 1
+        for model in candidate_models:
+            for default_config in model.get_default_configs():
+                config = copy.deepcopy(default_config)
+                # Add data, experiment, schema and seed
+                config['data'] = {'train_data': paths['train_data_path'], 'test_data': paths['test_data_path']}
+                config['experiment'] = {
+                    'mlflow_uri': mlflow_uri,
+                    'name': 'exp1',
+                    'save_figures': False,
+                    'save_predictions': False
+                }
+                config['schema'] = paths['schema_path']
+                config['seed'] = 0
+                # Add categories path if given
+                if 'categories_path' in paths and paths['categories_path'] is not None:
+                    config['categories'] = paths['categories_path']
+                # Output file name
+                output_file_name = f'conf_{idx}.yaml'
+                output_file = os.path.join(working_dir, output_file_name)
+                with open(output_file, 'w') as f:
+                    yaml.dump(config, f)
+                # Store config file path in list
+                config_file_paths.append(output_file)
+                # Add 1 to idx
+                idx += 1
 
-        elif pipeline_type == PipelineType.AUDIO_CLASSIFICATION_REGRESSION:
-            generate_pytorch_audio_classification_model_configs(output_path=working_dir,
-                                                                schema_path=paths['schema_path'],
-                                                                train_data=paths['train_data_path'],
-                                                                test_data=paths['test_data_path'],
-                                                                experiment_name='exp1',
-                                                                experiment_save_path=mlflow_uri,
-                                                                save_figures=False,
-                                                                save_predictions=False,
-                                                                categories_path=paths['categories_path'],
-                                                                seed=0)
-
-        elif pipeline_type == PipelineType.MULTIMODAL:
-            generate_multimodal_classification_model_configs(output_path=working_dir,
-                                                             schema_path=paths['schema_path'],
-                                                             train_data=paths['train_data_path'],
-                                                             test_data=paths['test_data_path'],
-                                                             experiment_name='exp1',
-                                                             experiment_save_path=mlflow_uri,
-                                                             save_figures=False,
-                                                             save_predictions=False,
-                                                             categories_path=paths['categories_path'],
-                                                             seed=0)
-
-        else:
-            raise Exception(f'Unknown pipeline type "{pipeline_type.name}"')
-
-        # Get generated config files
-        conf_files = os.listdir(working_dir)
-
-        # Run all experiments
-        for idx, conf_file_name in enumerate(conf_files):
+        # Run all experiments with the generated config files
+        for idx, conf_file_name in enumerate(config_file_paths):
             try:
                 run_experiment_from_config_file(config_file_path=os.path.join(working_dir, conf_file_name))
-                progress = (idx + 1) / len(conf_files)
+                progress = (idx + 1) / len(config_file_paths)
                 progress = int(round(progress * 100))
                 progress = min(progress, 100)
                 self.update_continual_learning_service_status(code=CL_TRAINING_STATUS_CODE,

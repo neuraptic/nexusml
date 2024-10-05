@@ -29,6 +29,7 @@ from nexusml.engine.models.common.pytorch import freeze_all_but_bn
 from nexusml.engine.models.utils import smooth
 from nexusml.engine.schema.base import Schema
 from nexusml.engine.schema.categories import Categories
+from nexusml.enums import TaskType
 
 
 class ClassifierModel(nn.Module):
@@ -288,6 +289,105 @@ class PytorchVisionModel(Model):
             return predictions
         else:
             return predictions_to_example_format(predictions=predictions, output_transforms=self.output_transforms)
+
+    @classmethod
+    def supports_schema(cls, schema: Schema) -> bool:
+        """
+        Determine if the model can run given a specific schema.
+
+        This method checks whether the current model is compatible with the provided
+        schema. It inspects the schema and returns True if the model can successfully
+        run with the provided schema, or False otherwise.
+
+        Args:
+            schema (Schema): The schema object to validate against the model.
+
+        Returns:
+            bool: True if the model can run with the provided schema, False otherwise.
+        """
+        if schema.task_type not in [TaskType.CLASSIFICATION, TaskType.REGRESSION]:
+            return False
+        for i in schema.inputs:
+            if i['type'] != 'image_file':
+                return False
+        return True
+
+    @classmethod
+    def get_default_configs(cls) -> List[dict]:
+        """
+        Retrieve all possible default configurations for the model.
+
+        This method returns a list of dictionaries representing various default
+        configurations that the model supports.
+
+        Args:
+            None.
+
+        Returns:
+            List[dict]: A list of dictionaries, each representing a different default
+            configuration supported by the model.
+        """
+        return [{
+            'dataframe_transforms': [{
+                'class': 'nexusml.engine.data.transforms.sklearn.SelectRequiredElements',
+                'args': {
+                    'select_shapes': False
+                }
+            }, {
+                'class': 'nexusml.engine.data.transforms.sklearn.DropNaNValues',
+                'args': None
+            }],
+            'transforms': {
+                'input_transforms': {
+                    'global': {
+                        'image_file': {
+                            'class': 'nexusml.engine.data.transforms.vision.torchvision.BasicImageTransform',
+                            'args': None
+                        }
+                    },
+                    'specific': None
+                },
+                'output_transforms': {
+                    'global': {
+                        'category': {
+                            'class': 'nexusml.engine.data.transforms.sklearn.LabelEncoderTransform',
+                            'args': None
+                        },
+                        'float': {
+                            'class': 'nexusml.engine.data.transforms.sklearn.MinMaxScalerTransform',
+                            'args': None
+                        }
+                    },
+                    'specific': None
+                }
+            },
+            'model': {
+                'class': 'nexusml.engine.models.vision.cnns.PytorchVisionModel',
+                'args': {
+                    'setup_function': 'nexusml.engine.models.vision.cnns.create_pytorch_resnet50_model',
+                    'pretrained_kwargs': {
+                        'norm_layer': None,
+                        'pretrained': True
+                    },
+                    'setup_args': {
+                        'batch_norm': True,
+                        'dropout_p1': 0.25,
+                        'dropout_p2': 0.5,
+                        'emb_size': 512
+                    },
+                }
+            },
+            'training': {
+                'batch_size': 32,
+                'epochs': 25,
+                'loss_function': {
+                    'class': 'nexusml.engine.models.common.pytorch.BasicLossFunction',
+                    'args': {},
+                },
+                'lr': 0.005,
+                'num_workers': 4
+            }
+        }]
 
     def save_model(self, output_file: Union[str, IO]):
         """

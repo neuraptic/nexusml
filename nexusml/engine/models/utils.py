@@ -1,4 +1,7 @@
-from typing import List
+import importlib
+import inspect
+import pkgutil
+from typing import List, Type
 
 import pandas as pd
 
@@ -59,3 +62,53 @@ def compute_and_save_monitoring_templates(data_path: str, model_path: str, outpu
 
     m = Model.load(input_file=model_path)
     m.compute_templates(data=df, output_file_path=output_path)
+
+
+def discover_models() -> List[Type[Model]]:
+    """
+    Discovers all classes that subclass `Model` from the specified known modules in the library.
+
+    This function dynamically imports modules from the `nexusml.engine.models` package and its submodules,
+    looking for any classes that subclass `Model`. Discovered `Model` subclasses are returned in a list.
+
+    Args:
+        None.
+
+    Returns:
+        List[Type[Model]]: A list of discovered `Model` subclasses.
+    """
+    discovered_models = []
+    # List of known modules in your library
+    known_modules = ['nexusml.engine.models']
+
+    def iter_namespace(ns_pkg):
+        """
+        Iterates over all packages and modules within the specified namespace package.
+
+        Args:
+            ns_pkg (module): The namespace package to iterate over.
+
+        Returns:
+            Iterator of package/module details.
+        """
+        return pkgutil.walk_packages(ns_pkg.__path__, ns_pkg.__name__ + '.')
+
+    for modname in known_modules:
+        try:
+            # Import the base module
+            module = importlib.import_module(modname)
+            # Iterate through the submodules in the namespace
+            for finder, submodname, ispkg in iter_namespace(module):
+                try:
+                    # Import each submodule
+                    submodule = importlib.import_module(submodname)
+                    # Find and collect all classes that are subclasses of Model
+                    for name, obj in inspect.getmembers(submodule, inspect.isclass):
+                        if issubclass(obj, Model) and obj is not Model:
+                            discovered_models.append(obj)
+                except Exception as e:
+                    print(f'Error importing {submodname}: {e}')
+        except Exception as e:
+            print(f'Error importing {modname}: {e}')
+
+    return discovered_models

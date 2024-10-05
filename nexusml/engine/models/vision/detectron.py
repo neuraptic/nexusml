@@ -23,6 +23,8 @@ from nexusml.engine.models.utils import smooth
 from nexusml.engine.models.vision.utils import detectron_preds_to_shapes
 from nexusml.engine.schema.base import Schema
 from nexusml.engine.schema.categories import Categories
+from nexusml.enums import MLProblemType
+from nexusml.enums import TaskType
 
 
 class DetectronObjectDetectionModel(Model):
@@ -219,6 +221,129 @@ class DetectronObjectDetectionModel(Model):
             return predictions
         else:
             return predictions_to_example_format(predictions=predictions, output_transforms=self.output_transforms)
+
+    @classmethod
+    def supports_schema(cls, schema: Schema) -> bool:
+        """
+        Determine if the model can run given a specific schema.
+
+        This method checks whether the current model is compatible with the provided
+        schema. It inspects the schema and returns True if the model can successfully
+        run with the provided schema, or False otherwise.
+
+        Args:
+            schema (Schema): The schema object to validate against the model.
+
+        Returns:
+            bool: True if the model can run with the provided schema, False otherwise.
+        """
+        if schema.task_type != TaskType.OBJECT_DETECTION:
+            return False
+        # Single input
+        if len(schema.inputs) != 1:
+            return False
+        # Image file and required
+        if schema.inputs[0]['type'] != 'image_file' or not schema.inputs[0]['required']:
+            return False
+        # Two outputs: shape and not required category
+        if len(schema.outputs) != 2:
+            return False
+        # The first is a required shape
+        if schema.outputs[0]['type'] == 'shape':
+            if not schema.outputs[0]['required']:
+                return False
+            # The second must be a not required category
+            if schema.outputs[1]['type'] != 'category' or schema.outputs[1]['required']:
+                return False
+        elif schema.outputs[0]['type'] == 'category':
+            # The first is a not required category
+            if schema.outputs[0]['required']:
+                return False
+            # The second must be a required shape
+            if schema.outputs[1]['type'] != 'shape' or not schema.outputs[1]['required']:
+                return False
+        else:
+            return False
+        # If all checks passed, return True
+        return True
+
+    @classmethod
+    def get_default_configs(cls) -> List[dict]:
+        """
+        Retrieve all possible default configurations for the model.
+
+        This method returns a list of dictionaries representing various default
+        configurations that the model supports.
+
+        Args:
+            None.
+
+        Returns:
+            List[dict]: A list of dictionaries, each representing a different default
+            configuration supported by the model.
+        """
+        return [{
+            'dataframe_transforms': [{
+                'class': 'nexusml.engine.data.transforms.sklearn.SelectRequiredElements',
+                'args': {
+                    'exclusion': None,
+                    'select_shapes': True
+                },
+            }, {
+                'class': 'nexusml.engine.data.transforms.sklearn.DropNaNValues',
+                'args': None
+            }, {
+                'class': 'nexusml.engine.data.transforms.vision.detectron.RegisterDetectionDatasetTransform',
+                'args': None,
+            }],
+            'model': {
+                'args': {
+                    'setup_args': {
+                        'checkpoint_url': 'COCO-Detection/faster_rcnn_R_50_FPN_1x.yaml'
+                    },
+                    'setup_function': 'nexusml.engine.models.vision.detectron.create_detection_model'
+                },
+                'class': 'nexusml.engine.models.vision.detectron.DetectronObjectDetectionModel'
+            },
+            'training': {
+                'batch_size': 8,
+                'epochs': 300,
+                'loss_function': {
+                    'args': {},
+                    'class': 'nexusml.engine.models.common.pytorch.BasicLossFunction'
+                },
+                'lr': 0.005,
+                'num_workers': 4
+            },
+            'transforms': {
+                'input_transforms': {
+                    'global': {
+                        'image_file': {
+                            'args': [],
+                            'class': 'nexusml.engine.data.transforms.vision.detectron.IdentityImageTransform'
+                        }
+                    },
+                    'specific': None
+                },
+                'output_transforms': {
+                    'global': {
+                        'category': {
+                            'args': {
+                                'problem_type': MLProblemType.DETECTION
+                            },
+                            'class': 'nexusml.engine.data.transforms.vision.detectron.OutputIdentityTransform'
+                        },
+                        'shape': {
+                            'args': {
+                                'problem_type': MLProblemType.DETECTION
+                            },
+                            'class': 'nexusml.engine.data.transforms.vision.detectron.OutputIdentityTransform'
+                        }
+                    },
+                    'specific': None
+                }
+            }
+        }]
 
     def save_model(self, output_file: Union[str, IO]) -> None:
         """
@@ -479,6 +604,129 @@ class DetectronObjectSegmentationModel(Model):
             return predictions
         else:
             return predictions_to_example_format(predictions=predictions, output_transforms=self.output_transforms)
+
+    @classmethod
+    def supports_schema(cls, schema: Schema) -> bool:
+        """
+        Determine if the model can run given a specific schema.
+
+        This method checks whether the current model is compatible with the provided
+        schema. It inspects the schema and returns True if the model can successfully
+        run with the provided schema, or False otherwise.
+
+        Args:
+            schema (Schema): The schema object to validate against the model.
+
+        Returns:
+            bool: True if the model can run with the provided schema, False otherwise.
+        """
+        if schema.task_type != TaskType.OBJECT_SEGMENTATION:
+            return False
+        # Single input
+        if len(schema.inputs) != 1:
+            return False
+        # Image file and required
+        if schema.inputs[0]['type'] != 'image_file' or not schema.inputs[0]['required']:
+            return False
+        # Two outputs: shape and not required category
+        if len(schema.outputs) != 2:
+            return False
+        # The first is a required shape
+        if schema.outputs[0]['type'] == 'shape':
+            if not schema.outputs[0]['required']:
+                return False
+            # The second must be a not required category
+            if schema.outputs[1]['type'] != 'category' or schema.outputs[1]['required']:
+                return False
+        elif schema.outputs[0]['type'] == 'category':
+            # The first is a not required category
+            if schema.outputs[0]['required']:
+                return False
+            # The second must be a required shape
+            if schema.outputs[1]['type'] != 'shape' or not schema.outputs[1]['required']:
+                return False
+        else:
+            return False
+        # If all checks passed, return True
+        return True
+
+    @classmethod
+    def get_default_configs(cls) -> List[dict]:
+        """
+        Retrieve all possible default configurations for the model.
+
+        This method returns a list of dictionaries representing various default
+        configurations that the model supports.
+
+        Args:
+            None.
+
+        Returns:
+            List[dict]: A list of dictionaries, each representing a different default
+            configuration supported by the model.
+        """
+        return [{
+            'dataframe_transforms': [{
+                'class': 'nexusml.engine.data.transforms.sklearn.SelectRequiredElements',
+                'args': {
+                    'exclusion': None,
+                    'select_shapes': True
+                },
+            }, {
+                'class': 'nexusml.engine.data.transforms.sklearn.DropNaNValues',
+                'args': None
+            }, {
+                'class': 'nexusml.engine.data.transforms.vision.detectron.RegisterSegmentationDatasetTransform',
+                'args': None,
+            }],
+            'model': {
+                'args': {
+                    'setup_args': {
+                        'checkpoint_url': 'COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_1x.yaml'
+                    },
+                    'setup_function': 'nexusml.engine.models.vision.detectron.create_segmentation_model'
+                },
+                'class': 'nexusml.engine.models.vision.detectron.DetectronObjectSegmentationModel'
+            },
+            'training': {
+                'batch_size': 8,
+                'epochs': 300,
+                'loss_function': {
+                    'args': {},
+                    'class': 'nexusml.engine.models.common.pytorch.BasicLossFunction'
+                },
+                'lr': 0.005,
+                'num_workers': 4
+            },
+            'transforms': {
+                'input_transforms': {
+                    'global': {
+                        'image_file': {
+                            'args': [],
+                            'class': 'nexusml.engine.data.transforms.vision.detectron.IdentityImageTransform'
+                        }
+                    },
+                    'specific': None
+                },
+                'output_transforms': {
+                    'global': {
+                        'category': {
+                            'args': {
+                                'problem_type': MLProblemType.SEGMENTATION
+                            },
+                            'class': 'nexusml.engine.data.transforms.vision.detectron.OutputIdentityTransform'
+                        },
+                        'shape': {
+                            'args': {
+                                'problem_type': MLProblemType.SEGMENTATION
+                            },
+                            'class': 'nexusml.engine.data.transforms.vision.detectron.OutputIdentityTransform'
+                        }
+                    },
+                    'specific': None
+                }
+            }
+        }]
 
     def save_model(self, output_file: Union[str, IO]):
         """

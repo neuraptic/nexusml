@@ -28,6 +28,7 @@ from nexusml.engine.models.nlp.data_collator import DataCollatorWithPadding
 from nexusml.engine.models.utils import smooth
 from nexusml.engine.schema.base import Schema
 from nexusml.engine.schema.categories import Categories
+from nexusml.enums import TaskType
 
 
 class ClassificationHead(nn.Module):
@@ -431,6 +432,105 @@ class TransformersNLPModel(Model):
             return predictions
         else:
             return predictions_to_example_format(predictions=predictions, output_transforms=self.output_transforms)
+
+    @classmethod
+    def supports_schema(cls, schema: Schema) -> bool:
+        """
+        Determine if the model can run given a specific schema.
+
+        This method checks whether the current model is compatible with the provided
+        schema. It inspects the schema and returns True if the model can successfully
+        run with the provided schema, or False otherwise.
+
+        Args:
+            schema (Schema): The schema object to validate against the model.
+
+        Returns:
+            bool: True if the model can run with the provided schema, False otherwise.
+        """
+        if schema.task_type not in [TaskType.CLASSIFICATION, TaskType.REGRESSION]:
+            return False
+        for i in schema.inputs:
+            if i['type'] != 'text':
+                return False
+        return True
+
+    @classmethod
+    def get_default_configs(cls) -> List[dict]:
+        """
+        Retrieve all possible default configurations for the model.
+
+        This method returns a list of dictionaries representing various default
+        configurations that the model supports.
+
+        Args:
+            None.
+
+        Returns:
+            List[dict]: A list of dictionaries, each representing a different default
+            configuration supported by the model.
+        """
+        return [{
+            'dataframe_transforms': [{
+                'args': {
+                    'select_shapes': False
+                },
+                'class': 'nexusml.engine.data.transforms.sklearn.SelectRequiredElements'
+            }, {
+                'args': None,
+                'class': 'nexusml.engine.data.transforms.sklearn.DropNaNValues'
+            }],
+            'model': {
+                'args': {
+                    'pretrained_kwargs': {
+                        'pretrained_model_name_or_path': 'xlm-roberta-base'
+                    },
+                    'setup_args': {
+                        'dropout_p1': 0.25
+                    },
+                    'setup_function': 'nexusml.engine.models.nlp.roberta.create_transformers_classifier_model'
+                },
+                'class': 'nexusml.engine.models.nlp.roberta.TransformersNLPModel'
+            },
+            'training': {
+                'batch_size': 32,
+                'epochs': 30,
+                'loss_function': {
+                    'args': {
+                        'classification_cost_sensitive': True
+                    },
+                    'class': 'nexusml.engine.models.common.pytorch.BasicLossFunction'
+                },
+                'lr': 0.005,
+                'num_workers': 0
+            },
+            'transforms': {
+                'input_transforms': {
+                    'global': {
+                        'text': {
+                            'args': {
+                                'path': 'xlm-roberta-base'
+                            },
+                            'class': 'nexusml.engine.data.transforms.nlp.text.BasicNLPTransform'
+                        }
+                    },
+                    'specific': None
+                },
+                'output_transforms': {
+                    'global': {
+                        'category': {
+                            'args': None,
+                            'class': 'nexusml.engine.data.transforms.sklearn.LabelEncoderTransform'
+                        },
+                        'float': {
+                            'args': None,
+                            'class': 'nexusml.engine.data.transforms.sklearn.MinMaxScalerTransform'
+                        }
+                    },
+                    'specific': None
+                }
+            }
+        }]
 
     def save_model(self, output_file: Union[str, IO]) -> None:
         """

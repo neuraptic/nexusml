@@ -128,6 +128,44 @@ class Model(ABC):
         """
         raise NotImplementedError()
 
+    @classmethod
+    @abstractmethod
+    def supports_schema(cls, schema: Schema) -> bool:
+        """
+        Determine if the model can run given a specific schema.
+
+        This method checks whether the current model is compatible with the provided
+        schema. Derived classes should implement logic that inspects the schema and
+        returns True if the model can successfully run with the provided schema, or
+        False otherwise.
+
+        Args:
+            schema (Schema): The schema object to validate against the model.
+
+        Returns:
+            bool: True if the model can run with the provided schema, False otherwise.
+        """
+        raise NotImplementedError()
+
+    @classmethod
+    @abstractmethod
+    def get_default_configs(cls) -> List[dict]:
+        """
+        Retrieve all possible default configurations for the model.
+
+        This method returns a list of dictionaries representing various default
+        configurations that the model supports. This allows subclasses to define
+        and return multiple default setups depending on the specific parameters
+        or algorithms they can use.
+
+        Args:
+            None.
+
+        Returns:
+            List[dict]: A list of dictionaries, each representing a different default
+            configuration supported by the model.
+        """
+
     def explain(self, data: Optional[Union[pd.DataFrame, dict, List[dict]]] = None, **kwargs) -> Optional:
         """
         Explain the model or the data

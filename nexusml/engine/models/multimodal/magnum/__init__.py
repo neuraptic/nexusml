@@ -364,6 +364,144 @@ class MagnumModel(Model):
         else:
             return predictions_to_example_format(predictions=predictions, output_transforms=self.output_transforms)
 
+    @classmethod
+    def supports_schema(cls, schema: Schema) -> bool:
+        """
+        Determine if the model can run given a specific schema.
+
+        This method checks whether the current model is compatible with the provided
+        schema. It inspects the schema and returns True if the model can successfully
+        run with the provided schema, or False otherwise.
+
+        Args:
+            schema (Schema): The schema object to validate against the model.
+
+        Returns:
+            bool: True if the model can run with the provided schema, False otherwise.
+        """
+        if schema.task_type not in [TaskType.CLASSIFICATION, TaskType.REGRESSION]:
+            return False
+        has_image = False
+        has_text = False
+        has_tabular = False
+        for i in schema.inputs:
+            if i['type'] == 'image_file':
+                if has_image:
+                    # Only one input image supported
+                    return False
+                else:
+                    has_image = True
+            elif i['type'] == 'text':
+                if has_text:
+                    # Only one input text supported
+                    return False
+                else:
+                    has_text = True
+            elif i['type'] in ['category', 'integer', 'float']:
+                has_tabular = True
+            else:
+                return False
+
+        # At least two modalities
+        n_modalities = sum([has_image, has_text, has_tabular])
+        if n_modalities < 2:
+            return False
+        else:
+            return True
+
+    @classmethod
+    def get_default_configs(cls) -> List[dict]:
+        """
+        Retrieve all possible default configurations for the model.
+
+        This method returns a list of dictionaries representing various default
+        configurations that the model supports.
+
+        Args:
+            None.
+
+        Returns:
+            List[dict]: A list of dictionaries, each representing a different default
+            configuration supported by the model.
+        """
+        return [{
+            'dataframe_transforms': [{
+                'args': {
+                    'select_shapes': False
+                },
+                'class': 'nexusml.engine.data.transforms.sklearn.SelectRequiredElements'
+            }, {
+                'args': None,
+                'class': 'nexusml.engine.data.transforms.sklearn.DropNaNValues'
+            }],
+            'model': {
+                'args': {
+                    'pretrained_kwargs': {
+                        'norm_layer': None,
+                        'pretrained': True
+                    },
+                    'setup_args': {
+                        'batch_norm': True,
+                        'dropout_p1': 0.25,
+                        'dropout_p2': 0.5,
+                        'emb_size': 512,
+                        'd_model': 256
+                    },
+                    'setup_function': 'nexusml.engine.models.multimodal.magnum.create_multimodal_magnum_model'
+                },
+                'class': 'nexusml.engine.models.multimodal.magnum.MagnumModel'
+            },
+            'training': {
+                'batch_size': 8,
+                # ToDo: change this to 30
+                'epochs': 3,
+                'loss_function': {
+                    'args': {},
+                    'class': 'nexusml.engine.models.common.pytorch.BasicLossFunction'
+                },
+                'lr': 0.00325,
+                'num_workers': 4
+            },
+            'transforms': {
+                'input_transforms': {
+                    'global': {
+                        'category': {
+                            'args': None,
+                            'class': 'nexusml.engine.data.transforms.sklearn.LabelEncoderTransform'
+                        },
+                        'float': {
+                            'args': None,
+                            'class': 'nexusml.engine.data.transforms.sklearn.StandardScalerTransform'
+                        },
+                        'image_file': {
+                            'args': None,
+                            'class': 'nexusml.engine.data.transforms.vision.torchvision.SquareImageTransform'
+                        },
+                        'text': {
+                            'args': {
+                                'path': 'roberta-large'
+                            },
+                            'class': 'nexusml.engine.data.transforms.nlp.text.BasicNLPTransform'
+                        }
+                    },
+                    'specific': None
+                },
+                'output_transforms': {
+                    'global': {
+                        'category': {
+                            'args': None,
+                            'class': 'nexusml.engine.data.transforms.sklearn.LabelEncoderTransform'
+                        },
+                        'float': {
+                            'args': None,
+                            'class': 'nexusml.engine.data.transforms.sklearn.MinMaxScalerTransform'
+                        }
+                    },
+                    'specific': None
+                }
+            }
+        }]
+
     def save_model(self, output_file: Union[str, IO]):
         """
         Method that saves all the information needed to create the PyTorch model serialized in the given output_file

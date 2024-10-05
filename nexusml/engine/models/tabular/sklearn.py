@@ -1,3 +1,4 @@
+import copy
 import functools
 import importlib
 import pickle
@@ -22,6 +23,7 @@ from nexusml.engine.models.base import Model
 from nexusml.engine.models.base import TrainingOutputInfo
 from nexusml.engine.schema.base import Schema
 from nexusml.engine.schema.categories import Categories
+from nexusml.enums import TaskType
 
 
 class SKLearnModel(Model):
@@ -196,6 +198,231 @@ class SKLearnModel(Model):
             return predictions
         else:
             return predictions_to_example_format(predictions=predictions, output_transforms=self.output_transforms)
+
+    @classmethod
+    def supports_schema(cls, schema: Schema) -> bool:
+        """
+        Determine if the model can run given a specific schema.
+
+        This method checks whether the current model is compatible with the provided
+        schema. It inspects the schema and returns True if the model can successfully
+        run with the provided schema, or False otherwise.
+
+        Args:
+            schema (Schema): The schema object to validate against the model.
+
+        Returns:
+            bool: True if the model can run with the provided schema, False otherwise.
+        """
+        if schema.task_type not in [TaskType.CLASSIFICATION, TaskType.REGRESSION]:
+            return False
+        for i in schema.inputs:
+            if i['type'] not in ['boolean', 'integer', 'float', 'category']:
+                return False
+        return True
+
+    @classmethod
+    def get_default_configs(cls) -> List[dict]:
+        """
+        Retrieve all possible default configurations for the model.
+
+        This method returns a list of dictionaries representing various default
+        configurations that the model supports.
+
+        Args:
+            None.
+
+        Returns:
+            List[dict]: A list of dictionaries, each representing a different default
+            configuration supported by the model.
+        """
+        # To store all configs
+        configs = []
+
+        # Transforms section
+        transforms_section = {
+            'transforms': {
+                'input_transforms': SKLearnModel._get_default_input_transforms_config(),
+                'output_transforms': SKLearnModel._get_default_output_transforms_config()
+            },
+            'dataframe_transforms': SKLearnModel._get_default_dataframe_transforms_config()
+        }
+
+        # SVM
+        svm_config = copy.deepcopy(transforms_section)
+        svm_config['model'] = SKLearnModel._get_default_svm_config()
+        configs.append(svm_config)
+
+        # Knn
+        knn_config = copy.deepcopy(transforms_section)
+        knn_config['model'] = SKLearnModel._get_default_knn_config()
+        configs.append(knn_config)
+
+        # Random Forest
+        random_forest_config = copy.deepcopy(transforms_section)
+        random_forest_config['model'] = SKLearnModel._get_default_random_forest_config()
+        configs.append(random_forest_config)
+
+        # Gradient Boosting Tree
+        gradient_boosting_config = copy.deepcopy(transforms_section)
+        gradient_boosting_config['model'] = SKLearnModel._get_default_gradient_boosting_config()
+        configs.append(gradient_boosting_config)
+
+        return configs
+
+    @staticmethod
+    def _get_default_dataframe_transforms_config() -> List[dict]:
+        """
+        Returns the default configuration for DataFrame transformations applied to the data.
+
+        Returns:
+            List[dict]: A list of transformations applied to the DataFrame.
+        """
+        return [{
+            'class': 'nexusml.engine.data.transforms.sklearn.SelectRequiredElements',
+            'args': {
+                'shapes': False
+            }
+        }, {
+            'class': 'nexusml.engine.data.transforms.sklearn.DropNaNValues',
+            'args': None
+        }, {
+            'class': 'nexusml.engine.data.transforms.sklearn.SimpleMissingValueImputation',
+            'args': None
+        }]
+
+    @staticmethod
+    def _get_default_input_transforms_config() -> dict:
+        """
+        Returns the default input transformation configuration applied globally and for specific input types.
+
+        Returns:
+            dict: Input transformations applied globally and specifically for each input type.
+        """
+        return {
+            'global': {
+                'float': {
+                    'class': 'nexusml.engine.data.transforms.sklearn.StandardScalerTransform',
+                    'args': None
+                },
+                'category': {
+                    'class': 'nexusml.engine.data.transforms.sklearn.OneHotEncoderTransform',
+                    'args': None
+                },
+                'text': {
+                    'class': 'nexusml.engine.data.transforms.sklearn.TfIdfTransform',
+                    'args': None
+                }
+            },
+            'specific': None
+        }
+
+    @staticmethod
+    def _get_default_output_transforms_config() -> dict:
+        """
+        Returns the default output transformation configuration applied globally for each output type.
+
+        Returns:
+            dict: Output transformations applied globally for each output type.
+        """
+        return {
+            'global': {
+                'float': {
+                    'class': 'nexusml.engine.data.transforms.sklearn.MinMaxScalerTransform',
+                    'args': None
+                },
+                'category': {
+                    'class': 'nexusml.engine.data.transforms.sklearn.LabelEncoderTransform',
+                    'args': None
+                }
+            },
+            'specific': None
+        }
+
+    @staticmethod
+    def _get_default_svm_config() -> dict:
+        """
+        Returns the default configuration for an SVM model.
+
+        Returns:
+            dict: Configuration for SVM-based model.
+        """
+        return {
+            'class': 'nexusml.engine.models.tabular.sklearn.SKLearnModel',
+            'args': {
+                'setup_function': 'nexusml.engine.models.tabular.sklearn._setup_sklearn_from_config',
+                'setup_args': {
+                    'classification_model_class': 'sklearn.svm.SVC',
+                    'classification_model_args': {
+                        'probability': True
+                    },
+                    'regression_model_class': 'sklearn.svm.SVR'
+                }
+            }
+        }
+
+    @staticmethod
+    def _get_default_knn_config() -> dict:
+        """
+        Returns the default configuration for a k-NN model.
+
+        Returns:
+            dict: Configuration for k-NN model.
+        """
+        return {
+            'class': 'nexusml.engine.models.tabular.sklearn.SKLearnModel',
+            'args': {
+                'setup_function': 'nexusml.engine.models.tabular.sklearn._setup_sklearn_from_config',
+                'setup_args': {
+                    'classification_model_class': 'sklearn.neighbors.KNeighborsClassifier',
+                    'regression_model_class': 'sklearn.neighbors.KNeighborsRegressor'
+                }
+            }
+        }
+
+    @staticmethod
+    def _get_default_random_forest_config() -> dict:
+        """
+        Returns the default configuration for a Random Forest model.
+
+        Returns:
+            dict: Configuration for Random Forest model.
+        """
+        return {
+            'class': 'nexusml.engine.models.tabular.sklearn.SKLearnModel',
+            'args': {
+                'setup_function': 'nexusml.engine.models.tabular.sklearn._setup_sklearn_from_config',
+                'setup_args': {
+                    'classification_model_class': 'sklearn.ensemble.RandomForestClassifier',
+                    'regression_model_class': 'sklearn.ensemble.RandomForestRegressor'
+                }
+            }
+        }
+
+    @staticmethod
+    def _get_default_gradient_boosting_config() -> dict:
+        """
+        Returns the default configuration for a Gradient Boosting Tree model.
+
+        Returns:
+            dict: Configuration for Gradient Boosting Tree model.
+        """
+        return {
+            'class': 'nexusml.engine.models.tabular.sklearn.SKLearnModel',
+            'args': {
+                'setup_function': 'nexusml.engine.models.tabular.sklearn._setup_sklearn_from_config',
+                'setup_args': {
+                    'classification_model_class': 'sklearn.ensemble.GradientBoostingClassifier',
+                    'classification_model_args': {
+                        'verbose': 0
+                    },
+                    'regression_model_class': 'sklearn.ensemble.GradientBoostingRegressor',
+                    'regression_model_args': {
+                        'verbose': 0
+                    },
+                }
+            }
+        }
 
     def summary(self) -> Optional[str]:
         """
