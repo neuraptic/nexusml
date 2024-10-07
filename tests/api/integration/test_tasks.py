@@ -18,7 +18,7 @@ from nexusml.api.endpoints import ENDPOINT_TASK_SCHEMA
 from nexusml.api.endpoints import ENDPOINT_TASK_SETTINGS
 from nexusml.api.endpoints import ENDPOINT_TASK_STATUS
 from nexusml.api.endpoints import ENDPOINT_TASKS
-from nexusml.api.ext import cache
+from nexusml.api.external.ext import cache
 from nexusml.api.resources.tasks import InputCategory
 from nexusml.api.resources.tasks import InputElement
 from nexusml.api.resources.tasks import MetadataCategory

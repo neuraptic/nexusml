@@ -6,6 +6,7 @@ import pytest
 from nexusml.api.endpoints import ENDPOINT_MYACCOUNT
 from nexusml.api.endpoints import ENDPOINT_ORGANIZATION
 from nexusml.api.endpoints import ENDPOINT_TASKS
+from nexusml.api.external.auth0 import Auth0Manager
 from nexusml.api.resources.organizations import Organization
 from nexusml.constants import ADMIN_ROLE
 from nexusml.constants import HTTP_UNPROCESSABLE_ENTITY_STATUS_CODE
@@ -66,7 +67,7 @@ class TestQuotas:
 
     def test_users_limit(self, mocker, mock_request_responses, client: MockClient):
         mocker.patch('nexusml.api.views.myaccount.agent_from_token', side_effect=jwt.InvalidTokenError())
-        mocker.patch('nexusml.api.views.myaccount.get_auth0_management_api_token', return_value=MagicMock())
+        mocker.patch.object(Auth0Manager, 'get_auth0_user_data', return_value=MagicMock())
         mock_user_invitation = MagicMock()
         mock_user_invitation.organization_id = 1
         mocker.patch('nexusml.api.views.myaccount.MyAccountView._get_user_invitation', return_value=MagicMock())

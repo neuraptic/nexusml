@@ -20,7 +20,7 @@ from nexusml.api.endpoints import ENDPOINT_MONITORING_SERVICE_NOTIFICATIONS
 from nexusml.api.endpoints import ENDPOINT_MONITORING_SERVICE_STATUS
 from nexusml.api.endpoints import ENDPOINT_MONITORING_SERVICE_TEMPLATES
 from nexusml.api.endpoints import ENDPOINT_SERVICES
-from nexusml.api.ext import cache
+from nexusml.api.external.ext import cache
 from nexusml.api.resources.tasks import Task
 from nexusml.api.views import services
 from nexusml.constants import DATETIME_FORMAT

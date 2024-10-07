@@ -14,7 +14,8 @@ from flask_apispec import use_kwargs
 from flask_mail import Message
 
 from nexusml.api.endpoints import ENDPOINT_CLIENT_API_KEY
-from nexusml.api.ext import mail
+from nexusml.api.external.auth0 import Auth0Manager
+from nexusml.api.external.ext import mail
 from nexusml.api.resources.base import dump
 from nexusml.api.resources.base import DuplicateResourceError
 from nexusml.api.resources.base import InvalidDataError
@@ -51,8 +52,6 @@ from nexusml.api.schemas.organizations import UserRolesResponseSchema
 from nexusml.api.schemas.organizations import UsersPage
 from nexusml.api.utils import config
 from nexusml.api.utils import decode_api_key
-from nexusml.api.utils import get_auth0_management_api_token
-from nexusml.api.utils import get_auth0_user_data
 from nexusml.api.views.base import create_view
 from nexusml.api.views.common import PermissionAssignmentView
 from nexusml.api.views.core import agent_from_token
@@ -212,9 +211,8 @@ class OrganizationsView(_OrganizationsView):
                     oldest_entry = WaitList.query().order_by(WaitList.id_).first()
                     delete_from_db(oldest_entry)
 
-                mgmt_api_access_token = get_auth0_management_api_token()
-                auth0_user_data: dict = get_auth0_user_data(access_token=mgmt_api_access_token,
-                                                            auth0_id_or_email=g.user_auth0_id)
+                auth0_manager: Auth0Manager = Auth0Manager()
+                auth0_user_data: dict = auth0_manager.get_auth0_user_data(auth0_id_or_email=g.user_auth0_id)
                 db_entry = WaitList(uuid=g.agent_uuid,
                                     email=auth0_user_data['email'],
                                     first_name=auth0_user_data['given_name'],

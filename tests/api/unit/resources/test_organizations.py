@@ -2,6 +2,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
+from nexusml.api.external.auth0 import Auth0Manager
 from nexusml.api.resources import ResourceNotFoundError
 from nexusml.api.resources.organizations import User
 from nexusml.env import ENV_AUTH0_CLIENT_ID
@@ -18,12 +19,12 @@ def mock_env(monkeypatch):
 
 @pytest.fixture(scope='function')
 def mock_get_auth0_user_data(mocker):
-    return mocker.patch('nexusml.api.resources.organizations.get_auth0_user_data')
+    return mocker.patch.object(Auth0Manager, 'get_auth0_user_data', retutn_value={})
 
 
 @pytest.fixture(scope='function')
 def mock_get_auth0_management_api_token(mocker):
-    return mocker.patch('nexusml.api.resources.organizations.get_auth0_management_api_token')
+    return mocker.patch.object(Auth0Manager, '_get_auth0_management_api_token', return_value='auth0_token')
 
 
 class TestDownloadAuth0UserData:

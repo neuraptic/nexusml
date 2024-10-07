@@ -13,6 +13,7 @@ from nexusml.api.endpoints import ENDPOINT_MYACCOUNT_ROLES
 from nexusml.api.endpoints import ENDPOINT_MYACCOUNT_SETTINGS
 from nexusml.api.endpoints import ENDPOINT_TASK
 from nexusml.api.endpoints import ENDPOINT_TASK_FILE
+from nexusml.api.external.auth0 import Auth0Manager
 from nexusml.api.utils import API_DOMAIN
 from nexusml.api.utils import config
 from nexusml.constants import HTTP_DELETE_STATUS_CODE
@@ -57,9 +58,10 @@ class TestMyAccount:
         db_commit_and_expire()
         assert UserDB.get_from_uuid(session_user_id) is not None
 
-    def test_delete(self, mock_request_responses, mocker, client: MockClient, session_user_id: str):
+    def test_delete(self, mocker, client: MockClient, session_user_id: str):
         endpoint_url = get_endpoint(parameterized_endpoint=ENDPOINT_MYACCOUNT)
         mocker.patch('nexusml.api.resources.organizations.get_user_roles', return_value=['not_admin'])
+        mocker.patch.object(Auth0Manager, 'delete_auth0_user')
 
         response = client.send_request(method='DELETE', url=endpoint_url)
 
@@ -67,8 +69,17 @@ class TestMyAccount:
         db_commit_and_expire()
         assert UserDB.get_from_uuid(session_user_id) is None
 
-    def test_get(self, mock_request_responses, client: MockClient, session_user_id: str):
+    def test_get(self, mocker, client: MockClient, session_user_id: str):
         endpoint_url = get_endpoint(parameterized_endpoint=ENDPOINT_MYACCOUNT)
+        mock_auth0_return_data: dict = {
+            'user_id': 'test_id',
+            'email': 'test@testorg.com',
+            'email_verified': True,
+            'given_name': 'Test',
+            'family_name': 'User'
+        }
+        mocker.patch.object(Auth0Manager, 'get_auth0_user_data', return_value=mock_auth0_return_data)
+        mocker.patch.object(Auth0Manager, '__init__', return_value=None)
         response = client.send_request(method='GET', url=endpoint_url)
         assert response.status_code == HTTP_GET_STATUS_CODE
         user = UserDB.get_from_uuid(session_user_id)
@@ -87,8 +98,10 @@ class TestMyAccount:
             'email_verified': True
         }
 
-    def test_put(self, mock_request_responses, client: MockClient):
+    def test_put(self, mocker, client: MockClient):
         endpoint_url = get_endpoint(parameterized_endpoint=ENDPOINT_MYACCOUNT)
+        mock_auth0_manager = mocker.patch('nexusml.api.resources.organizations.Auth0Manager')
+        mock_auth0_manager.patch_auth0_user.return_value = None
         request_json: dict = {'first_name': 'new_f_name', 'last_name': 'new_l_name'}
         response = client.send_request(method='PUT', url=endpoint_url, json=request_json)
         assert response.status_code == HTTP_PUT_STATUS_CODE

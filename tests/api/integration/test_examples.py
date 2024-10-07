@@ -9,7 +9,7 @@ from nexusml.api.endpoints import ENDPOINT_EXAMPLE
 from nexusml.api.endpoints import ENDPOINT_EXAMPLE_SHAPE
 from nexusml.api.endpoints import ENDPOINT_EXAMPLE_SLICE
 from nexusml.api.endpoints import ENDPOINT_EXAMPLES
-from nexusml.api.ext import cache
+from nexusml.api.external.ext import cache
 from nexusml.api.resources.examples import Comment
 from nexusml.api.resources.examples import Example
 from nexusml.api.resources.examples import Shape

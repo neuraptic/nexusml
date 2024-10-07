@@ -18,7 +18,7 @@ from sqlalchemy import bindparam
 
 from nexusml.api.endpoints import ENDPOINT_AI_PREDICTION_LOG
 from nexusml.api.endpoints import ENDPOINT_EXAMPLE
-from nexusml.api.ext import cache
+from nexusml.api.external.ext import cache
 from nexusml.api.resources.ai import PredictionLog
 from nexusml.api.resources.base import Permission
 from nexusml.api.resources.base import Resource

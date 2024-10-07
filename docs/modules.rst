@@ -91,7 +91,7 @@ Module Documentation
     :undoc-members:
     :show-inheritance:
 
-.. automodule:: nexusml.api.ext
+.. automodule:: nexusml.api.external.ext
     :members:
     :undoc-members:
     :show-inheritance:

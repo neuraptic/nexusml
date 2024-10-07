@@ -16,8 +16,8 @@ from nexusml.api.endpoints import ENDPOINT_AI_PREDICTION_LOG
 from nexusml.api.endpoints import ENDPOINT_AI_PREDICTION_LOGS
 from nexusml.api.endpoints import ENDPOINT_AI_TESTING
 from nexusml.api.endpoints import ENDPOINT_AI_TRAINING
-from nexusml.api.ext import cache
-from nexusml.api.ext import redis_buffer
+from nexusml.api.external.ext import cache
+from nexusml.api.external.ext import redis_buffer
 from nexusml.api.resources.ai import AIModel
 from nexusml.api.resources.ai import PredictionLog
 from nexusml.api.resources.tasks import Task

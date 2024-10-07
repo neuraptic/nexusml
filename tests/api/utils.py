@@ -5,7 +5,7 @@ import uuid
 
 import boto3
 
-from nexusml.api.ext import cache
+from nexusml.api.external.ext import cache
 from nexusml.api.resources.base import Resource
 from nexusml.api.resources.organizations import Organization
 from nexusml.api.resources.organizations import Role

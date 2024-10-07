@@ -14,7 +14,7 @@ from nexusml.api.endpoints import ENDPOINT_OUTPUT_ELEMENT
 from nexusml.api.endpoints import ENDPOINT_TAG
 from nexusml.api.endpoints import ENDPOINT_TASK
 from nexusml.api.endpoints import ENDPOINT_TASK_FILE
-from nexusml.api.ext import cache
+from nexusml.api.external.ext import cache
 from nexusml.api.resources.ai import AIModel
 from nexusml.api.resources.ai import PredictionLog
 from nexusml.api.resources.examples import Example

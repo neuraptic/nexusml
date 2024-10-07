@@ -13,7 +13,7 @@ from marshmallow import fields
 from marshmallow import validate
 from sqlalchemy import or_ as sql_or
 
-from nexusml.api.ext import redis_buffer
+from nexusml.api.external.ext import redis_buffer
 from nexusml.api.jobs.event_jobs import run_mon_service
 from nexusml.api.jobs.event_jobs import train
 from nexusml.api.resources.ai import AIModel

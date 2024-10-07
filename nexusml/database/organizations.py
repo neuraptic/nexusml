@@ -452,6 +452,8 @@ def create_default_admin_and_maintainer_roles():
     """
     Create default roles
     """
+    db.session.query(RoleDB).delete()
+    db.session.commit()
 
     roles = [
         RoleDB(role_id=1, organization_id=1, name=ADMIN_ROLE, description='Administrator'),

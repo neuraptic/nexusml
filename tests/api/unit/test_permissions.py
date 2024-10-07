@@ -8,7 +8,7 @@ import uuid
 import pytest
 from sqlalchemy import bindparam
 
-from nexusml.api.ext import cache
+from nexusml.api.external.ext import cache
 from nexusml.api.resources.ai import AIModel
 from nexusml.api.resources.base import Permission
 from nexusml.api.resources.base import Resource
