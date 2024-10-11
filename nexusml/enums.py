@@ -379,34 +379,41 @@ class TaskType(Enum):
     OBJECT_SEGMENTATION = 4
 
 
-class PipelineType(Enum):
+class TaskTemplate(Enum):
     """
-    Enumeration of different AI pipeline types.
+    Enumeration of different task schema templates.
 
     Attributes:
-        UNKNOWN (int): Represents an unknown pipeline type.
-        IMAGE_CLASSIFICATION_REGRESSION (int): Represents an image classification or regression pipeline.
-        OBJECT_DETECTION (int): Represents an object detection pipeline.
-        OBJECT_SEGMENTATION (int): Represents an object segmentation pipeline.
-        NLP_CLASSIFICATION_REGRESSION (int): Represents an NLP classification or regression pipeline.
-        AUDIO_CLASSIFICATION_REGRESSION (int): Represents an audio classification or regression pipeline.
-        TABULAR_CLASSIFICATION_REGRESSION (int): Represents a tabular classification or regression pipeline.
-        MULTIMODAL (int): Represents a multimodal pipeline.
+        IMAGE_CLASSIFICATION (int): Represents an image classification task schema template.
+        IMAGE_REGRESSION (int): Represents an image regression task schema template.
+        OBJECT_DETECTION (int): Represents an object detection task schema template.
+        OBJECT_SEGMENTATION (int): Represents an object segmentation task schema template.
+        TEXT_CLASSIFICATION (int): Represents a text classification task schema template.
+        TEXT_REGRESSION (int): Represents a text regression task schema template.
+        AUDIO_CLASSIFICATION (int): Represents an audio classification task schema template.
+        AUDIO_REGRESSION (int): Represents an audio regression task schema template.
+        TABULAR_CLASSIFICATION (int): Represents a tabular classification task schema template.
+        TABULAR_REGRESSION (int): Represents a tabular regression task schema template.
+        MULTIMODAL_CLASSIFICATION (int): Represents a multimodal classification task schema template.
+        MULTIMODAL_REGRESSION (int): Represents a multimodal regression task schema template.
     """
-    # Generic
-    UNKNOWN = 0
     # Image
-    IMAGE_CLASSIFICATION_REGRESSION = 1
+    IMAGE_CLASSIFICATION = 0
+    IMAGE_REGRESSION = 1
     OBJECT_DETECTION = 2
     OBJECT_SEGMENTATION = 3
     # NLP
-    NLP_CLASSIFICATION_REGRESSION = 4
+    TEXT_CLASSIFICATION = 4
+    TEXT_REGRESSION = 5
     # Audio
-    AUDIO_CLASSIFICATION_REGRESSION = 5
+    AUDIO_CLASSIFICATION = 6
+    AUDIO_REGRESSION = 7
     # Tabular
-    TABULAR_CLASSIFICATION_REGRESSION = 6
+    TABULAR_CLASSIFICATION = 8
+    TABULAR_REGRESSION = 9
     # Multimodal
-    MULTIMODAL = 7
+    MULTIMODAL_CLASSIFICATION = 10
+    MULTIMODAL_REGRESSION = 11
 
 
 class MLProblemType(Enum):

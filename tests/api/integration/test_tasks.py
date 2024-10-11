@@ -47,8 +47,8 @@ from nexusml.database.tasks import CategoryDB
 from nexusml.database.tasks import ElementDB
 from nexusml.database.tasks import TaskDB
 from nexusml.enums import ElementValueType
+from nexusml.enums import TaskTemplate
 from nexusml.enums import FileType
-from nexusml.enums import PipelineType
 from nexusml.enums import ResourceAction
 from nexusml.enums import ResourceType
 from nexusml.enums import ServiceType
@@ -232,7 +232,7 @@ class TestTasks:
         req_json = {
             'name': 'New task from template',
             'description': 'New task description',
-            'template': PipelineType.OBJECT_DETECTION.name.lower()
+            'template': TaskTemplate.OBJECT_DETECTION.name.lower()
         }
         endpoint_url = get_endpoint(parameterized_endpoint=ENDPOINT_TASKS)
         response = client.send_request(method='POST', url=endpoint_url, json=req_json)

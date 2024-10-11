@@ -247,20 +247,17 @@ class EngineWorker(abc.ABC):
 
     def train_initial_model(self, working_dir: str, data_dir: str, paths: dict):
         """
-        Performs the initial training of the model based on the task schema. The function first retrieves the task
-        schema and determines the pipeline type. Depending on the pipeline type, it generates appropriate model
-        configuration files  (for tabular, image, object detection, segmentation, NLP, audio, or multimodal pipelines)
-        and initiates the training process.
+        Performs the initial training of a model based on the task schema. This function starts by retrieving
+        the task schema and then filtering candidate models that can support it. If no compatible models are found,
+        the function raises a ValueError indicating that the schema is not trainable from scratch.
 
-        The function also handles exceptions and progress updates during training, and after training,
-        retrieves the best model based on experiment results.
+        For each compatible model, the function generates default configurations, modifies them to include data paths,
+        experiment details, schema paths, and optional categories if provided. These configurations are saved in the
+        working directory for each model. The function then sequentially runs experiments using the generated
+        configuration files, while updating the progress of the training process.
 
-        Steps:
-        1. Retrieve the task schema and determine the pipeline type.
-        2. Raise a ValueError if the model is not trainable from scratch.
-        3. Generate configuration files based on the pipeline type.
-        4. Run experiments using generated config files.
-        5. Retrieve and return the best model and its configuration.
+        Once all experiments are completed, the function identifies and retrieves the best model based on the experiment
+        results, returning both the path to the best model and its configuration file.
 
         Args:
             working_dir (str): Path to the working directory where configuration files will be stored.
@@ -272,8 +269,8 @@ class EngineWorker(abc.ABC):
             tuple: A tuple containing the path to the best model and the best model's configuration file.
 
         Raises:
-            ValueError: If the pipeline type is unknown and thus the model cannot be trained from scratch.
-            Exception: If the pipeline type is unknown.
+            ValueError: If the schema is not trainable from scratch due to no compatible models.
+            Exception: If any errors occur during experiment execution, these will be captured and logged.
         """
         # Get Task Schema
         task_schema = Schema.create_schema_from_dict(self.get_task_schema())

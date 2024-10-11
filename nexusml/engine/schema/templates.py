@@ -1,6 +1,6 @@
 from typing import Tuple
 
-from nexusml.enums import PipelineType
+from nexusml.enums import TaskTemplate
 from nexusml.enums import TaskType
 
 
@@ -138,27 +138,61 @@ def get_tabular_classification_regression_schema_template(inputs: Tuple[str] = (
     return {'inputs': inputs, 'outputs': outputs, 'task_type': task_type.name.lower()}
 
 
-def get_task_schema_template(pipeline: PipelineType) -> dict:
+def get_multimodal_classification_regression_schema_template(task_type: TaskType) -> dict:
+    input = [
+        {
+            "name": "image",
+            "type": "image_file",
+            "nullable": False,
+            "required": True
+        },
+        {
+            "name": "text",
+            "type": "text",
+            "nullable": False,
+            "required": True
+        }
+    ]
+    if task_type == TaskType.CLASSIFICATION:
+        outputs = [{'name': 'class', 'type': 'category', 'nullable': False, 'required': True}]
+    else:
+        outputs = [{'name': 'reg_value', 'type': 'float', 'nullable': False, 'required': True}]
+    return {'inputs': input, 'outputs': outputs, 'task_type': task_type.name.lower()}
+
+
+def get_task_schema_template(task_template: TaskTemplate) -> dict:
     """
-    Get the schema template for a given pipeline type
+    Get the schema template for a given task type.
 
     Args:
-        pipeline (PipelineType): Pipeline type
+        task_template (TaskTemplate): Task template
 
     Returns:
-        dict: Schema template for the given pipeline type
+        dict: Schema template for the given task type.
     """
-    if pipeline == PipelineType.IMAGE_CLASSIFICATION_REGRESSION:
-        return get_image_classification_regression_schema_template()
-    elif pipeline == PipelineType.OBJECT_DETECTION:
+    if task_template == TaskTemplate.IMAGE_CLASSIFICATION:
+        return get_image_classification_regression_schema_template(task_type=TaskType.CLASSIFICATION)
+    elif task_template == TaskTemplate.IMAGE_REGRESSION:
+        return get_object_detection_segmentation_schema_template(task_type=TaskType.REGRESSION)
+    elif task_template == TaskTemplate.OBJECT_DETECTION:
         return get_object_detection_segmentation_schema_template(TaskType.OBJECT_DETECTION)
-    elif pipeline == PipelineType.OBJECT_SEGMENTATION:
+    elif task_template == TaskTemplate.OBJECT_SEGMENTATION:
         return get_object_detection_segmentation_schema_template(TaskType.OBJECT_SEGMENTATION)
-    elif pipeline == PipelineType.NLP_CLASSIFICATION_REGRESSION:
-        return get_nlp_classification_regression_schema_template()
-    elif pipeline == PipelineType.AUDIO_CLASSIFICATION_REGRESSION:
-        return get_audio_classification_regression_schema_template()
-    elif pipeline == PipelineType.TABULAR_CLASSIFICATION_REGRESSION:
-        return get_tabular_classification_regression_schema_template()
+    elif task_template == TaskTemplate.TEXT_CLASSIFICATION:
+        return get_nlp_classification_regression_schema_template(task_type=TaskType.CLASSIFICATION)
+    elif task_template == TaskTemplate.TEXT_REGRESSION:
+        return get_nlp_classification_regression_schema_template(task_type=TaskType.REGRESSION)
+    elif task_template == TaskTemplate.AUDIO_CLASSIFICATION:
+        return get_audio_classification_regression_schema_template(task_type=TaskType.CLASSIFICATION)
+    elif task_template == TaskTemplate.AUDIO_REGRESSION:
+        return get_audio_classification_regression_schema_template(task_type=TaskType.REGRESSION)
+    elif task_template == TaskTemplate.TABULAR_CLASSIFICATION:
+        return get_tabular_classification_regression_schema_template(task_type=TaskType.CLASSIFICATION)
+    elif task_template == TaskTemplate.TABULAR_REGRESSION:
+        return get_tabular_classification_regression_schema_template(task_type=TaskType.REGRESSION)
+    elif task_template == TaskTemplate.MULTIMODAL_CLASSIFICATION:
+        return get_multimodal_classification_regression_schema_template(task_type=TaskType.CLASSIFICATION)
+    elif task_template == TaskTemplate.MULTIMODAL_REGRESSION:
+        return get_multimodal_classification_regression_schema_template(task_type=TaskType.REGRESSION)
     else:
-        raise ValueError(f'Missing template schema for pipeline {str(pipeline)}')
+        raise ValueError(f'Missing template schema for {str(task_template)}')

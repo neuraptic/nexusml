@@ -3,7 +3,6 @@ import json
 from typing import Any, Dict, List, Optional, Union
 
 from nexusml.engine.exceptions import SchemaError
-from nexusml.enums import PipelineType
 from nexusml.enums import TaskType
 
 
@@ -444,91 +443,3 @@ class Schema(object):
                 return TaskType.UNKNOWN
         else:
             return TaskType.UNKNOWN
-
-
-def get_pipeline_type(task_schema: Union[Schema, Dict]) -> PipelineType:
-    """
-    This function analyzes the schema to get the pipelines to apply.
-
-    Note: In the future, we should have a list or a dictionary that maps schema -> pipelines.
-
-    Steps:
-        1) Check the task type. If it is unknown, return "unknown pipeline".
-        2) If it's a classification or regression task, check that inputs are not multimodal.
-           Multimodality will be supported when HPX is implemented.
-        3) If it's not a classification or regression task, we have specific pipelines for:
-               - Image Classification
-               - Object Detection
-               - Object Segmentation
-               - Text Classification
-               - Speech Classification
-    Args:
-        task_schema (Union[Schema, Dict]): the task schema
-
-    Returns:
-        PipelineType: the type of pipeline
-    """
-    if isinstance(task_schema, dict):
-        # Create schema object
-        schema = Schema.create_schema_from_dict(task_schema)
-    else:
-        assert isinstance(task_schema, Schema)
-        schema = task_schema
-
-    # Get the task type
-    task_type = schema.task_type
-
-    # If the task type is unknown, return unknown pipeline
-    if task_type == TaskType.UNKNOWN:
-        return PipelineType.UNKNOWN
-
-    # Return the pipeline type based on the task type
-    if task_type == TaskType.OBJECT_DETECTION:
-        return PipelineType.OBJECT_DETECTION
-    elif task_type == TaskType.OBJECT_SEGMENTATION:
-        return PipelineType.OBJECT_SEGMENTATION
-    else:
-        # It is a classification or regression task. Check the inputs.
-        #     - If they are multimodal, it is not trainable.
-        #     - Otherwise, get types replacing the tabular types (int, float, etc.)
-        #       by "tabular" because they are the same modality.
-        #       Note: text is considered tabular in this case because TfIdf can be applied.
-        _tab_types = ['boolean', 'integer', 'float', 'datetime', 'category']
-
-        input_types = list(map(lambda x: 'tabular' if x['type'] in _tab_types else x['type'], schema.inputs))
-
-        # If there are multiple not unique types, it is multimodal
-        if len(set(input_types)) == 1:
-            input_type = list(set(input_types))[0]
-            if input_type == 'tabular':
-                return PipelineType.TABULAR_CLASSIFICATION_REGRESSION
-            elif input_type == 'image_file':
-                return PipelineType.IMAGE_CLASSIFICATION_REGRESSION
-            elif input_type == 'text':
-                return PipelineType.NLP_CLASSIFICATION_REGRESSION
-            elif input_type == 'audio_file':
-                return PipelineType.AUDIO_CLASSIFICATION_REGRESSION
-        elif all([x in ['image_file', 'text', 'tabular'] for x in set(input_types)]):
-            if input_types.count('image_file') <= 1 and input_types.count('text') <= 1:
-                return PipelineType.MULTIMODAL
-            return PipelineType.UNKNOWN
-        else:
-            return PipelineType.UNKNOWN
-
-
-def trainable_from_scratch(task_schema: Dict) -> bool:
-    """
-    Checks if there exists a trainable pipeline for the given schema.
-
-    Args:
-        task_schema (Dict): dictionary defining the schema
-
-    Returns:
-        bool: True if there is a pipeline for the given schema or False in other case
-    """
-    # Get pipeline type
-    pipeline_type = get_pipeline_type(task_schema=task_schema)
-    if pipeline_type == PipelineType.UNKNOWN:
-        return False
-    else:
-        return True

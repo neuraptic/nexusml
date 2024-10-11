@@ -19,8 +19,8 @@ from nexusml.api.schemas.utils import remove_hex_color_number_sign
 from nexusml.api.schemas.utils import validate_hex_color
 from nexusml.constants import API_NAME
 from nexusml.enums import ElementMultiValue
+from nexusml.enums import TaskTemplate
 from nexusml.enums import ElementValueType
-from nexusml.enums import PipelineType
 from nexusml.enums import TaskType
 
 _task_type_field = EnumField(TaskType,
@@ -44,26 +44,9 @@ class TaskRequest(TaskSchema, ResourceRequestSchema):
 
 
 class TaskPOSTRequest(TaskRequest):
-    _templates = [
-        'image_classification', 'object_detection', 'object_segmentation', 'text_classification',
-        'audio_classification', 'tabular_classification'
-    ]
-    template = fields.String(allow_none=True,
-                             validate=validate.OneOf(_templates),
-                             description='Use a template for task schema')
-
-    @post_load
-    def _template_to_pipeline(self, data: dict, **kwargs) -> dict:
-        renaming = {
-            'image_classification': 'image_classification_regression',
-            'text_classification': 'nlp_classification_regression',
-            'audio_classification': 'audio_classification_regression',
-            'tabular_classification': 'tabular_classification_regression'
-        }
-        template = data.get('template')
-        if template:
-            data['template'] = PipelineType[renaming.get(template, template).upper()]
-        return data
+    template = EnumField(TaskTemplate,
+                         allow_none=True,
+                         description=' | '.join(f'"{x.name.lower()}"' for x in TaskTemplate))
 
 
 class TaskPUTRequest(TaskRequest):

@@ -57,9 +57,9 @@ from nexusml.engine.buffers import MonBufferIO
 from nexusml.engine.schema.base import Schema as TaskSchema
 from nexusml.engine.schema.templates import get_task_schema_template
 from nexusml.enums import ElementType
+from nexusml.enums import  TaskTemplate
 from nexusml.enums import ElementValueType
 from nexusml.enums import NotificationSource
-from nexusml.enums import PipelineType
 from nexusml.enums import ResourceType
 from nexusml.enums import TaskFileUse
 from nexusml.enums import TaskType
@@ -800,7 +800,7 @@ class Task(Resource):
         if schema_template:
             if 'type' in data:
                 raise UnprocessableRequestError('Task type cannot be specified when using a template')
-            task.set_schema_from_template(pipeline_type=schema_template, check_permissions=False)
+            task.set_schema_from_template(task_template=schema_template, check_permissions=False)
             cls._clear_buffers(task)
         return task
 
@@ -1130,16 +1130,16 @@ class Task(Resource):
         # Serialize and return the dumped task schema
         return TaskSchemaResponse().dump(task_schema_dict)
 
-    def set_schema_from_template(self, pipeline_type: PipelineType, check_permissions: bool = True):
+    def set_schema_from_template(self, task_template: TaskTemplate, check_permissions: bool = True):
         """
-        Sets the task schema based on the provided pipeline template.
+        Sets the task schema based on the provided template.
 
         Creates input, output, and metadata elements as defined by the template and associates
         them with the task. This method helps initialize the task schema by using predefined
-        templates for specific pipeline types.
+        templates for specific task types.
 
         Args:
-            pipeline_type (PipelineType): The type of pipeline to base the schema on.
+            task_template (TaskTemplate): The task template to base the schema on.
             check_permissions (bool, optional): Whether to check permissions when creating elements.
 
         Steps:
@@ -1155,7 +1155,7 @@ class Task(Resource):
                                 check_permissions=check_permissions,
                                 check_parents=check_permissions)
 
-        schema_dict = get_task_schema_template(pipeline=pipeline_type)
+        schema_dict = get_task_schema_template(task_template=task_template)
 
         for input_element in schema_dict['inputs']:
             _create_resource(resource_model=InputElement, data=input_element)
