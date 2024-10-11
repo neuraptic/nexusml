@@ -106,11 +106,11 @@ def get_metrics_and_figures(targets: Union[Dict, pd.DataFrame], predictions: Dic
             # Get metrics and figures
             sub_m = metrics.get_regression_metrics(target=out_target, prediction=out_prediction)
             sub_f = figures.get_regression_figures(target=out_target, prediction=out_prediction)
-        elif tfm_out_info.output_problem_type == MLProblemType.DETECTION:
+        elif tfm_out_info.output_problem_type == MLProblemType.OBJECT_DETECTION:
             out_shapes = get_shapes_from_targets(targets=out_target, shapes_column=targets['shapes'].to_numpy())
             sub_m = metrics.get_object_detection_metrics(target=out_shapes, prediction=out_prediction)
             sub_f = {}
-        elif tfm_out_info.output_problem_type == MLProblemType.SEGMENTATION:
+        elif tfm_out_info.output_problem_type == MLProblemType.OBJECT_SEGMENTATION:
             out_shapes = get_shapes_from_targets(targets=out_target, shapes_column=targets['shapes'].to_numpy())
             sub_m = metrics.get_object_segmentation_metrics(target=out_shapes, prediction=out_prediction)
             sub_f = {}
@@ -260,7 +260,7 @@ def join_data_and_predictions_df(data: pd.DataFrame,
                 raise DataError(f"Cannot create column named '{k}' because it already exists")
             # Set data
             data[k] = prediction_array
-        elif tfm_out_info.output_problem_type in [MLProblemType.DETECTION, MLProblemType.SEGMENTATION]:
+        elif tfm_out_info.output_problem_type in [MLProblemType.OBJECT_DETECTION, MLProblemType.OBJECT_SEGMENTATION]:
             # Get predictions list
             predicted_list = predictions[o['name']]
             if not isinstance(predicted_list, list):
@@ -306,10 +306,10 @@ def get_metric_name_and_comparator(problem_type: MLProblemType) -> Tuple[str, Ca
     elif problem_type == MLProblemType.REGRESSION:
         metric = 'mse'
         cmp = lt
-    elif problem_type == MLProblemType.DETECTION:
+    elif problem_type == MLProblemType.OBJECT_DETECTION:
         metric = 'mAP'
         cmp = gt
-    elif problem_type == MLProblemType.SEGMENTATION:
+    elif problem_type == MLProblemType.OBJECT_SEGMENTATION:
         metric = 'mAP'
         cmp = gt
     else:

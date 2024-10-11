@@ -208,7 +208,7 @@ def predictions_to_example_format(predictions: dict,
                 scores = dict(zip(series.index, series.to_list()))
                 predicted_class = series.index[series.argmax()]
                 outputs.append({'element': k, 'value': {'category': predicted_class, 'scores': scores}})
-            elif problem_type in [MLProblemType.DETECTION, MLProblemType.SEGMENTATION]:
+            elif problem_type in [MLProblemType.OBJECT_DETECTION, MLProblemType.OBJECT_SEGMENTATION]:
                 outputs.append({'element': k, 'value': v[i]})
             else:
                 raise Exception(f"Unexpected problem type '{str(problem_type)}'")

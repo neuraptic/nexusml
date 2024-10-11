@@ -329,13 +329,13 @@ class DetectronObjectDetectionModel(Model):
                     'global': {
                         'category': {
                             'args': {
-                                'problem_type': MLProblemType.DETECTION
+                                'problem_type': MLProblemType.OBJECT_DETECTION
                             },
                             'class': 'nexusml.engine.data.transforms.vision.detectron.OutputIdentityTransform'
                         },
                         'shape': {
                             'args': {
-                                'problem_type': MLProblemType.DETECTION
+                                'problem_type': MLProblemType.OBJECT_DETECTION
                             },
                             'class': 'nexusml.engine.data.transforms.vision.detectron.OutputIdentityTransform'
                         }
@@ -712,13 +712,13 @@ class DetectronObjectSegmentationModel(Model):
                     'global': {
                         'category': {
                             'args': {
-                                'problem_type': MLProblemType.SEGMENTATION
+                                'problem_type': MLProblemType.OBJECT_SEGMENTATION
                             },
                             'class': 'nexusml.engine.data.transforms.vision.detectron.OutputIdentityTransform'
                         },
                         'shape': {
                             'args': {
-                                'problem_type': MLProblemType.SEGMENTATION
+                                'problem_type': MLProblemType.OBJECT_SEGMENTATION
                             },
                             'class': 'nexusml.engine.data.transforms.vision.detectron.OutputIdentityTransform'
                         }

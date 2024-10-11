@@ -424,14 +424,14 @@ class MLProblemType(Enum):
         REGRESSION (int): Represents a regression problem.
         BINARY_CLASSIFICATION (int): Represents a binary classification problem.
         MULTI_CLASS_CLASSIFICATION (int): Represents a multi-class classification problem.
-        DETECTION (int): Represents an object detection problem.
-        SEGMENTATION (int): Represents an object segmentation problem.
+        OBJECT_DETECTION (int): Represents an object detection problem.
+        OBJECT_SEGMENTATION (int): Represents an object segmentation problem.
     """
     REGRESSION = 1
     BINARY_CLASSIFICATION = 2
     MULTI_CLASS_CLASSIFICATION = 3
-    DETECTION = 4  # TODO: Rename it to "OBJECT_DETECTION"
-    SEGMENTATION = 5  # TODO. Rename it to "OBJECT_SEGMENTATION"
+    OBJECT_DETECTION = 4
+    OBJECT_SEGMENTATION = 5
 
 
 class EngineType(Enum):
