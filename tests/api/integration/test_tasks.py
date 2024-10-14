@@ -47,12 +47,12 @@ from nexusml.database.tasks import CategoryDB
 from nexusml.database.tasks import ElementDB
 from nexusml.database.tasks import TaskDB
 from nexusml.enums import ElementValueType
-from nexusml.enums import TaskTemplate
 from nexusml.enums import FileType
 from nexusml.enums import ResourceAction
 from nexusml.enums import ResourceType
 from nexusml.enums import ServiceType
 from nexusml.enums import TaskFileUse
+from nexusml.enums import TaskTemplate
 from nexusml.env import ENV_WEB_CLIENT_ID
 from nexusml.statuses import inference_data_error_status
 from nexusml.statuses import task_created_status

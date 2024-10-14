@@ -1,7 +1,7 @@
 from abc import ABC
 from abc import abstractmethod
 import os
-from typing import Iterable, List, Type, Union
+from typing import Iterable, List, Optional, Type, Union
 
 from sqlalchemy import text as sql_text
 from sqlalchemy.exc import IntegrityError
@@ -57,11 +57,11 @@ from nexusml.engine.buffers import MonBufferIO
 from nexusml.engine.schema.base import Schema as TaskSchema
 from nexusml.engine.schema.templates import get_task_schema_template
 from nexusml.enums import ElementType
-from nexusml.enums import  TaskTemplate
 from nexusml.enums import ElementValueType
 from nexusml.enums import NotificationSource
 from nexusml.enums import ResourceType
 from nexusml.enums import TaskFileUse
+from nexusml.enums import TaskTemplate
 from nexusml.enums import TaskType
 from nexusml.env import ENV_SUPPORT_EMAIL
 from nexusml.statuses import Status
@@ -933,18 +933,6 @@ class Task(Resource):
         # Set resource data
         super()._set_data(data=data, notify_to=notify_to)
 
-    def type_(self) -> Union[TaskType, List[TaskType]]:
-        """
-        Returns the task type.
-
-        Returns:
-            Union[TaskType, List[TaskType]]: The task type. If a list is returned, it indicates that no exact task type
-                                             could be inferred from the task schema, and the list contains all the
-                                             possible types the task could be.
-        """
-        # We call `dump_task_schema` because the task type is inferred when dumping the task schema
-        return self.dump_task_schema()['task_type']
-
     def users_with_access(self) -> List[UserDB]:
         """
         Returns a list of users with access to the task.
@@ -1102,6 +1090,32 @@ class Task(Resource):
         """
         return self._get_elements(element_type=MetadataElement)
 
+    def _dump_elements(self) -> dict:
+        return {
+            'inputs': dump(resources=self.input_elements(), serialize=False, expand_associations=True),
+            'outputs': dump(resources=self.output_elements(), serialize=False, expand_associations=True),
+            'metadata': dump(resources=self.metadata_elements(), serialize=False, expand_associations=True)
+        }
+
+    def _infer_task_type(self, inputs: List[dict], outputs: List[dict]) -> Union[TaskType, List[TaskType]]:
+        task_schema = TaskSchema(inputs=[InputElement.dump_data(data=x) for x in inputs],
+                                 outputs=[OutputElement.dump_data(data=x) for x in outputs],
+                                 task_type=self.db_object().type_)
+
+        return task_schema.task_type
+
+    def type_(self) -> Union[TaskType, List[TaskType]]:
+        """
+        Returns the task type.
+
+        Returns:
+            Union[TaskType, List[TaskType]]: The task type. If a list is returned, it indicates that no exact task type
+                                             could be inferred from the task schema, and the list contains all the
+                                             possible types the task could be.
+        """
+        elements = self._dump_elements()
+        return self._infer_task_type(inputs=elements['inputs'], outputs=elements['outputs'])
+
     def dump_task_schema(self) -> dict:
         """
         Dumps the full task schema, including inputs, outputs, metadata, and inferred task type.
@@ -1113,19 +1127,11 @@ class Task(Resource):
             dict: A dictionary representing the full task schema, including the inferred task type.
         """
         # Dump elements
-        task_schema_dict = {
-            'inputs': dump(resources=self.input_elements(), serialize=False, expand_associations=True),
-            'outputs': dump(resources=self.output_elements(), serialize=False, expand_associations=True),
-            'metadata': dump(resources=self.metadata_elements(), serialize=False, expand_associations=True)
-        }
-
-        # Infer the task type and, if provided, ensure that it is consistent
-        task_schema = TaskSchema(inputs=[InputElement.dump_data(data=x) for x in task_schema_dict['inputs']],
-                                 outputs=[OutputElement.dump_data(data=x) for x in task_schema_dict['outputs']],
-                                 task_type=self.db_object().type_)
+        task_schema_dict = self._dump_elements()
 
         # Update the dumped task schema with the inferred task type
-        task_schema_dict['task_type'] = task_schema.task_type
+        task_schema_dict['task_type'] = self._infer_task_type(inputs=task_schema_dict['inputs'],
+                                                              outputs=task_schema_dict['outputs'])
 
         # Serialize and return the dumped task schema
         return TaskSchemaResponse().dump(task_schema_dict)

@@ -19,8 +19,8 @@ from nexusml.api.schemas.utils import remove_hex_color_number_sign
 from nexusml.api.schemas.utils import validate_hex_color
 from nexusml.constants import API_NAME
 from nexusml.enums import ElementMultiValue
-from nexusml.enums import TaskTemplate
 from nexusml.enums import ElementValueType
+from nexusml.enums import TaskTemplate
 from nexusml.enums import TaskType
 
 _task_type_field = EnumField(TaskType,
