@@ -348,7 +348,7 @@ class Schema(object):
         else:
             raise ValueError(f'Invalid task_type value: {task_type_value}')
         # Create a Schema object with the provided inputs and outputs
-        return cls(inputs=d['inputs'], outputs=d['outputs'], task_type=task_type)
+        return cls(inputs=d.get('inputs', []), outputs=d.get('outputs', []), task_type=task_type)
 
     @classmethod
     def create_schema_from_json(cls, json_file: str):
