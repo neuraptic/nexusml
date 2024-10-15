@@ -2,7 +2,6 @@
 
 import abc
 import copy
-from datetime import datetime
 import json
 import os
 import re
@@ -10,15 +9,15 @@ import shutil
 import tempfile
 import threading
 import time
-import traceback
-from typing import Dict, List, Optional, Tuple
 import zipfile
+from datetime import datetime
+from typing import Dict, List, Optional, Tuple
 
 import psutil
-from sklearn.model_selection import train_test_split
-from sqlalchemy import and_ as sql_and
 import torch
 import yaml
+from sklearn.model_selection import train_test_split
+from sqlalchemy import and_ as sql_and
 
 from nexusml.api.resources.ai import AIModel
 from nexusml.api.resources.base import dump
@@ -44,6 +43,7 @@ from nexusml.database.services import ServiceType
 from nexusml.database.tasks import CategoryDB
 from nexusml.database.tasks import ElementDB
 from nexusml.database.tasks import TaskDB
+from nexusml.engine.exceptions import SchemaError, ExperimentError, DataError
 from nexusml.engine.experiments.run import retrain_model
 from nexusml.engine.experiments.run import run_experiment_from_config_file
 from nexusml.engine.experiments.tracking.mlflow import get_best_model
@@ -56,8 +56,9 @@ from nexusml.enums import ElementType
 from nexusml.enums import EngineType
 from nexusml.enums import FileStorageBackend
 from nexusml.enums import LabelingStatus
-from nexusml.statuses import AL_WAITING_STATUS_CODE
+from nexusml.statuses import AL_WAITING_STATUS_CODE, CL_UNKNOWN_ERROR_STATUS_CODE, CL_DATA_ERROR_STATUS_CODE
 from nexusml.statuses import CL_INITIALIZING_TRAINING_STATUS_CODE
+from nexusml.statuses import CL_SCHEMA_ERROR_STATUS_CODE
 from nexusml.statuses import CL_TRAINING_STATUS_CODE
 from nexusml.statuses import CL_WAITING_STATUS_CODE
 from nexusml.statuses import INFERENCE_WAITING_STATUS_CODE
@@ -245,7 +246,7 @@ class EngineWorker(abc.ABC):
             # Sum 1 to the last number
             return '.'.join(current_biggest_version[:2] + (str(int(current_biggest_version[2]) + 1),))
 
-    def train_initial_model(self, working_dir: str, data_dir: str, paths: dict):
+    def train_initial_model(self, working_dir: str, data_dir: str, paths: dict) -> Tuple[str, str]:
         """
         Performs the initial training of a model based on the task schema. This function starts by retrieving
         the task schema and then filtering candidate models that can support it. If no compatible models are found,
@@ -278,9 +279,9 @@ class EngineWorker(abc.ABC):
         # Get candidate models
         candidate_models = list(filter(lambda x: x.supports_schema(schema=task_schema), discover_models()))
 
-        # If there are no candidate models, the schema is no trainable from scratch
+        # If there are no candidate models, the schema is not trainable from scratch
         if len(candidate_models) == 0:
-            raise ValueError('The schema is not trainable from scratch')
+            raise SchemaError('The schema is not trainable from scratch')
 
         mlflow_uri = 'file:///' + os.path.join(data_dir, 'mlruns').replace('\\', '/')
 
@@ -317,17 +318,23 @@ class EngineWorker(abc.ABC):
         for idx, conf_file_name in enumerate(config_file_paths):
             try:
                 run_experiment_from_config_file(config_file_path=os.path.join(working_dir, conf_file_name))
+            except Exception as e:
+                # An experiment could fail, let the others finish
+                pass
+            finally:
+                # Always update the progress
                 progress = (idx + 1) / len(config_file_paths)
                 progress = int(round(progress * 100))
                 progress = min(progress, 100)
                 self.update_continual_learning_service_status(code=CL_TRAINING_STATUS_CODE,
                                                               details={'progress_percentage': progress})
-            except Exception as e:
-                print(traceback.format_exc())
 
         # Get best model
-        best_model_path, best_model_config_path = get_best_model(mlflow_uri=mlflow_uri, experiment_name='exp1')
-        return best_model_path, best_model_config_path
+        try:
+            best_model_path, best_model_config_path = get_best_model(mlflow_uri=mlflow_uri, experiment_name='exp1')
+            return best_model_path, best_model_config_path
+        except Exception as e:
+            raise ExperimentError('Error retrieving the best model for the experiment')
 
     def train(self, model_uuid: Optional[str] = None):
         """
@@ -354,110 +361,125 @@ class EngineWorker(abc.ABC):
         Returns:
             None
         """
-        # To measure time
-        training_start_time = time.time()
+        try:
+            # To measure time
+            training_start_time = time.time()
 
-        # Working dir for confing files
-        working_dir = tempfile.TemporaryDirectory()
-        working_dir_name = working_dir.name
+            # Working dir for confing files
+            working_dir = tempfile.TemporaryDirectory()
+            working_dir_name = working_dir.name
 
-        # Directory to store schema, data, and experiments
-        data_dir = tempfile.TemporaryDirectory()
-        data_dir_name = data_dir.name
+            # Directory to store schema, data, and experiments
+            data_dir = tempfile.TemporaryDirectory()
+            data_dir_name = data_dir.name
 
-        # Set status as initializing
-        self.update_continual_learning_service_status(code=CL_INITIALIZING_TRAINING_STATUS_CODE)
+            # Set status as initializing
+            self.update_continual_learning_service_status(code=CL_INITIALIZING_TRAINING_STATUS_CODE)
 
-        # Prepare data
-        paths = self.prepare(output_path=data_dir_name, test_size=0.2, seed=0)
+            # Prepare data
+            try:
+                paths = self.prepare(output_path=data_dir_name, test_size=0.2, seed=0)
+            except Exception as e:
+                raise DataError('Error preparing the training data')
 
-        # If model_uuid is None, make the first training
-        if model_uuid is None:
-            best_model_path, best_model_config_path = self.train_initial_model(working_dir=working_dir_name,
-                                                                               data_dir=data_dir_name,
-                                                                               paths=paths)
-        else:
-            # Download model
-            # Get the file
-            self.get_model_file(model_uuid=model_uuid, output_path=data_dir_name)
+            # If model_uuid is None, make the first training
+            if model_uuid is None:
+                best_model_path, best_model_config_path = self.train_initial_model(working_dir=working_dir_name,
+                                                                                   data_dir=data_dir_name,
+                                                                                   paths=paths)
+            else:
+                # Download model
+                # Get the file
+                self.get_model_file(model_uuid=model_uuid, output_path=data_dir_name)
 
-            # Zip file
-            out_zip_file = os.path.join(data_dir_name, model_uuid)
+                # Zip file
+                out_zip_file = os.path.join(data_dir_name, model_uuid)
 
-            # Open the zip file and extract the specific file
-            with zipfile.ZipFile(out_zip_file, 'r') as zipf:
-                # Check if the file is in the zip archive
-                if 'model.pkl' in zipf.namelist():
-                    zipf.extract('model.pkl', data_dir_name)
-                    zipf.extract('config.yaml', data_dir_name)
+                # Open the zip file and extract the specific file
+                with zipfile.ZipFile(out_zip_file, 'r') as zipf:
+                    # Check if the file is in the zip archive
+                    if 'model.pkl' in zipf.namelist():
+                        zipf.extract('model.pkl', data_dir_name)
+                        zipf.extract('config.yaml', data_dir_name)
 
+                best_model_config_path = os.path.join(data_dir_name, 'config.yaml')
+
+            # Retrain with whole data
+            retrain_model(base_config_file=best_model_config_path,
+                          schema=paths['schema_path'],
+                          categories=paths['categories_path'],
+                          train_data=paths['data_path'],
+                          output_path=data_dir_name)
+            best_model_path = os.path.join(data_dir_name, 'model.pkl')
             best_model_config_path = os.path.join(data_dir_name, 'config.yaml')
 
-        # Retrain with whole data
-        retrain_model(base_config_file=best_model_config_path,
-                      schema=paths['schema_path'],
-                      categories=paths['categories_path'],
-                      train_data=paths['data_path'],
-                      output_path=data_dir_name)
-        best_model_path = os.path.join(data_dir_name, 'model.pkl')
-        best_model_config_path = os.path.join(data_dir_name, 'config.yaml')
+            # Create a zip with model and config
+            zip_file_name = os.path.join(data_dir_name, 'model.zip')
+            with zipfile.ZipFile(zip_file_name, 'w') as zipf:
+                # Add the files to the zip file
+                zipf.write(best_model_path, os.path.basename(best_model_path))
+                zipf.write(best_model_config_path, os.path.basename(best_model_config_path))
 
-        # Create a zip with model and config
-        zip_file_name = os.path.join(data_dir_name, 'model.zip')
-        with zipfile.ZipFile(zip_file_name, 'w') as zipf:
-            # Add the files to the zip file
-            zipf.write(best_model_path, os.path.basename(best_model_path))
-            zipf.write(best_model_config_path, os.path.basename(best_model_config_path))
+            self.update_continual_learning_service_status(code=CL_TRAINING_STATUS_CODE,)
 
-        self.update_continual_learning_service_status(code=CL_TRAINING_STATUS_CODE,)
+            # Get monitoring templates
+            with open(paths['data_path'], 'r') as f:
+                data = json.load(f)
+            m = Model.load(input_file=best_model_path)
+            monitoring_templates = m.compute_templates(data=data, output_file_path=None)
 
-        # Get monitoring templates
-        with open(paths['data_path'], 'r') as f:
-            data = json.load(f)
-        m = Model.load(input_file=best_model_path)
-        monitoring_templates = m.compute_templates(data=data, output_file_path=None)
+            # Remove model from memory
+            del m
 
-        # Remove model from memory
-        del m
+            # Get training time
+            training_end_time = time.time()
 
-        # Get training time
-        training_end_time = time.time()
+            # Get training device
+            training_device = 'gpu' if torch.cuda.is_available() else 'cpu'
 
-        # Get training device
-        training_device = 'gpu' if torch.cuda.is_available() else 'cpu'
+            # Create model
+            self.create_ai_model(model_path=zip_file_name,
+                                 training_device=training_device,
+                                 training_time=(training_end_time - training_start_time),
+                                 monitoring_templates=monitoring_templates)
 
-        # Create model
-        self.create_ai_model(model_path=zip_file_name,
-                             training_device=training_device,
-                             training_time=(training_end_time - training_end_time),
-                             monitoring_templates=monitoring_templates)
+            self.update_continual_learning_service_status(code=CL_WAITING_STATUS_CODE)
 
-        self.update_continual_learning_service_status(code=CL_WAITING_STATUS_CODE)
+            # Get the total amount of time
+            total_time = time.time() - training_end_time
 
-        # Get the total amount of time
-        total_time = time.time() - training_end_time
+            # Update task usage
+            self.update_task_usage(
+                cpu_hours=total_time,
+                gpu_hours=(training_end_time - training_start_time) if training_device == 'gpu' else 0
+            )
 
-        # Update task usage
-        self.update_task_usage(cpu_hours=total_time,
-                               gpu_hours=(training_end_time - training_start_time) if training_device == 'gpu' else 0)
+            # Set task status as active
+            self.update_task_status(code=TASK_ACTIVE_STATUS_CODE)
 
-        # Set task status as active
-        self.update_task_status(code=TASK_ACTIVE_STATUS_CODE)
-
-        # If services are enabled, set them as active in a waiting status
-        service_settings = self.get_services_settings()
-        if service_settings.get('inference', {}).get('enabled', False):
-            self.update_inference_service_status(code=INFERENCE_WAITING_STATUS_CODE)
-        if service_settings.get('active_learning', {}).get('enabled', False):
-            self.update_active_learning_service_status(code=AL_WAITING_STATUS_CODE)
-        if service_settings.get('monitoring', {}).get('enabled', False):
-            self.update_monitoring_service_status(code=MONITORING_WAITING_STATUS_CODE)
-        if service_settings.get('testing', {}).get('enabled', False):
-            self.update_testing_service_status(code=TESTING_WAITING_STATUS_CODE)
-
-        # Clean temp dirs
-        working_dir.cleanup()
-        data_dir.cleanup()
+            # If services are enabled, set them as active in a waiting status
+            service_settings = self.get_services_settings()
+            if service_settings.get('inference', {}).get('enabled', False):
+                self.update_inference_service_status(code=INFERENCE_WAITING_STATUS_CODE)
+            if service_settings.get('active_learning', {}).get('enabled', False):
+                self.update_active_learning_service_status(code=AL_WAITING_STATUS_CODE)
+            if service_settings.get('monitoring', {}).get('enabled', False):
+                self.update_monitoring_service_status(code=MONITORING_WAITING_STATUS_CODE)
+            if service_settings.get('testing', {}).get('enabled', False):
+                self.update_testing_service_status(code=TESTING_WAITING_STATUS_CODE)
+        except SchemaError:
+            self.update_continual_learning_service_status(code=CL_SCHEMA_ERROR_STATUS_CODE)
+        except DataError:
+            self.update_continual_learning_service_status(code=CL_DATA_ERROR_STATUS_CODE)
+        except Exception as e:
+            self.update_continual_learning_service_status(code=CL_UNKNOWN_ERROR_STATUS_CODE)
+        finally:
+            try:
+                # Clean temp dirs
+                working_dir.cleanup()
+                data_dir.cleanup()
+            except Exception as e:
+                pass
 
     @abc.abstractmethod
     def get_task_schema(self) -> dict:
