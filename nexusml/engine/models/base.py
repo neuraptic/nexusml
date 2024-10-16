@@ -1,6 +1,5 @@
 from abc import ABC
 from abc import abstractmethod
-import copy
 from dataclasses import dataclass
 import importlib
 import io
@@ -16,8 +15,6 @@ import pandas as pd
 from nexusml.engine.data.transforms.base import DataFrameTransforms
 from nexusml.engine.data.transforms.base import ElementTransforms
 from nexusml.engine.data.utils import json_examples_to_data_frame
-from nexusml.engine.data.utils import predictions_to_example_format
-from nexusml.engine.exceptions import ConfigFileError
 from nexusml.engine.schema.base import Schema
 from nexusml.engine.schema.categories import Categories
 
@@ -495,134 +492,3 @@ class Model(ABC):
             The load function will take these items and will set them to the model (with setattr)
         """
         raise NotImplementedError()
-
-
-class ModelOfModels(Model):
-
-    def __init__(self,
-                 schema: Optional[Schema],
-                 categories: Categories,
-                 model_config: Optional[Dict],
-                 dataframe_transforms: DataFrameTransforms,
-                 input_transforms: ElementTransforms,
-                 output_transforms: ElementTransforms,
-                 inference_mode: bool = False):
-        super().__init__(schema=schema,
-                         categories=categories,
-                         model_config=model_config,
-                         dataframe_transforms=dataframe_transforms,
-                         input_transforms=input_transforms,
-                         output_transforms=output_transforms,
-                         inference_mode=inference_mode)
-        self.models = []
-
-    def _setup_model(self):
-        if 'models' not in self.model_config:
-            raise ConfigFileError("'models' key missing")
-        for i in self.model_config['models']:
-            cls = _get_model_creator(i['class'])
-            # If "dataframe_transforms" is on model config, use it
-            if 'dataframe_transforms' in i:
-                dataframe_transforms = DataFrameTransforms.create_from_config(schema=self.schema,
-                                                                              categories=self.categories,
-                                                                              config=i['dataframe_transforms'])
-            else:
-                # Otherwise use the general transforms cloning them
-                dataframe_transforms = copy.deepcopy(self.dataframe_transforms)
-
-            # If "transforms" is on model config, use it
-            if 'transforms' in i:
-                if 'input_transforms' in i['transforms']:
-                    input_transforms = ElementTransforms.create_from_config(config=i['transforms']['input_transforms'],
-                                                                            input_or_outputs=self.schema.inputs,
-                                                                            categories=self.categories)
-                else:
-                    input_transforms = copy.deepcopy(self.input_transforms)
-                if 'output_transforms' in i['transforms']:
-                    output_transforms = ElementTransforms.create_from_config(
-                        config=i['transforms']['output_transforms'],
-                        input_or_outputs=self.schema.outputs,
-                        categories=self.categories)
-                else:
-                    output_transforms = copy.deepcopy(self.output_transforms)
-
-            else:
-                input_transforms = copy.deepcopy(self.input_transforms)
-                output_transforms = copy.deepcopy(self.output_transforms)
-
-            # Create the model
-            m = cls(schema=self.schema,
-                    model_config=i['args'],
-                    dataframe_transforms=dataframe_transforms,
-                    input_transforms=input_transforms,
-                    output_transforms=output_transforms)
-            self.models.append(m)
-
-    def fit(self, train_data: pd.DataFrame, valid_data: pd.DataFrame = None, **kwargs) -> TrainingOutputInfo:
-        # Set up the models
-        self._setup_model()
-        training_output_info = TrainingOutputInfo(params={}, figures={}, artifacts={})
-        for i in self.models:
-            toi = i.fit(train_data=train_data, valid_data=valid_data, **kwargs)
-            if toi.params is not None:
-                for k, v in toi.params.items():
-                    training_output_info.params[k] = v
-            if toi.figures is not None:
-                for k, v in toi.figures.items():
-                    training_output_info.figures[k] = v
-            if toi.artifacts is not None:
-                for k, v in toi.artifacts.items():
-                    training_output_info.artifacts[k] = v
-        return training_output_info
-
-    def predict(self, data: pd.DataFrame, split_predictions_by_output: bool = False, **kwargs) -> Union[Dict, List]:
-        predictions = {}
-        for i in self.models:
-            prediction = i.predict(data=data, split_predictions_by_output=True)
-            for k, v in prediction.items():
-                predictions[k] = v
-
-        if not split_predictions_by_output:
-            predictions = predictions_to_example_format(predictions=predictions,
-                                                        output_transforms=self.output_transforms)
-        return predictions
-
-    def summary(self) -> Optional[str]:
-        models_summary = ''
-        for i, m in enumerate(self.models):
-            s = m.summary()
-            if s is None:
-                s = 'No summary'
-            models_summary += f'Model {i}: {s}\n'
-        return models_summary
-
-    def save_model(self, output_file: Union[str, IO]):
-        models = []
-        for i in self.models:
-            buff = io.BytesIO()
-            i.save(buff)
-            buff.seek(0)
-            models.append(buff.read())
-        # If the given output file is a string, open the file and write the object (serialized with pickle)
-        if isinstance(output_file, str):
-            with open(output_file, 'wb') as f:
-                pickle.dump(models, f)
-        else:
-            # If is not a string, write the object there
-            pickle.dump(models, output_file)
-
-    @classmethod
-    def load_model(cls, input_file: Union[str, IO], schema: Schema, input_transforms: ElementTransforms,
-                   output_transforms: ElementTransforms, dataframe_transforms: DataFrameTransforms) -> Dict:
-        if isinstance(input_file, str):
-            with open(input_file, 'rb') as f:
-                model_info = pickle.load(f)
-        else:
-            # If is not a string, read the object there
-            model_info = pickle.load(input_file)
-
-        models = []
-        for i in range(len(model_info)):
-            models.append(Model.load(io.BytesIO(model_info[i])))
-
-        return {'models': models}
