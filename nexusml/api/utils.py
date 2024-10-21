@@ -90,7 +90,7 @@ DEFAULT_CONFIG = {
         },
     },
     'general': {
-        'default_api_key_enabled': True  # Default API key for testing purposes.
+        'auth_enabled': False  # WARNING: Authentication should be enabled in production.
     },
     'jobs': {
         'abort_upload_after': 7,  # Uploads that don't complete within the specified number of days will be aborted.

@@ -8,7 +8,9 @@ from apispec.ext.marshmallow import MarshmallowPlugin
 from flask import Flask
 from flask import jsonify
 from flask import redirect
+from flask import request
 from flask_apispec import FlaskApiSpec
+import jwt
 from webargs.flaskparser import abort
 from webargs.flaskparser import parser
 import yaml
@@ -21,6 +23,7 @@ from nexusml.api.ext import docs
 from nexusml.api.ext import init_celery
 from nexusml.api.ext import mail
 from nexusml.api.utils import config
+from nexusml.api.utils import decode_api_key
 from nexusml.api.utils import DEFAULT_CONFIG
 from nexusml.api.views import ai
 from nexusml.api.views import services
@@ -31,16 +34,16 @@ from nexusml.constants import CONFIG_FILE
 from nexusml.constants import DEFAULT_CELERY_BROKER_URL
 from nexusml.constants import DEFAULT_CELERY_RESULT_BACKEND
 from nexusml.constants import DEFAULT_PLAN_ID
-from nexusml.constants import ENDPOINT_DEFAULT_API_KEY
+from nexusml.constants import ENDPOINT_SYS_CONFIG
+from nexusml.constants import HTTP_NOT_FOUND_STATUS_CODE
 from nexusml.constants import SWAGGER_UI_URL
 from nexusml.constants import SWAGGER_URL
 from nexusml.database.core import create_tables
 from nexusml.database.core import db
-from nexusml.database.organizations import ClientDB
 from nexusml.database.organizations import create_default_admin_and_maintainer_roles
 from nexusml.database.organizations import create_default_organization
 from nexusml.database.organizations import create_known_clients_and_reserved_clients
-from nexusml.database.organizations import KNOWN_CLIENT_IDS
+from nexusml.database.organizations import KNOWN_CLIENT_UUIDS
 from nexusml.database.subscriptions import create_default_plans
 from nexusml.database.subscriptions import SubscriptionDB
 from nexusml.database.utils import save_or_ignore_duplicate
@@ -84,10 +87,14 @@ def create_app(setup_database: bool = True):
     # Set app config
     _set_app_config(app)
 
-    # If the default api key is enabled, show a warning
-    if config.get('general')['default_api_key_enabled']:
-        warnings.warn('WARNING: The default API key is enabled. '
-                      'This is a security risk and should be disabled in production.')
+    # If authentication is disabled, show a warning
+    if not config.get('general')['auth_enabled']:
+        warnings.warn('WARNING: '
+                      'Authentication is disabled. '
+                      'This is a security risk. '
+                      'Enable authentication in production.')
+
+        warnings.warn('Multi-tenancy support is disabled because authentication is disabled')
 
     # Set config for Swagger documentation
     _set_swagger_config(app)
@@ -296,9 +303,9 @@ def _set_celery_config(app):
 def _set_routes(app: Flask):
     api_url = config.get('server')['api_url']
 
-    ##############
-    # Basic URLs #
-    ##############
+    #########
+    # INDEX #
+    #########
 
     @app.route('/')
     def index():
@@ -308,20 +315,33 @@ def _set_routes(app: Flask):
     def api_index():
         return redirect(api_url + SWAGGER_UI_URL)
 
-    if config.get('general')['default_api_key_enabled']:
-        # Endpoint for getting the default API key (if enabled)
-        @app.route(api_url + ENDPOINT_DEFAULT_API_KEY, methods=['GET'])
-        def get_default_api_key():
-            # Get the default client's API key (i.e., the default API key)
-            default_client_id = KNOWN_CLIENT_IDS['default']
-            default_api_key_enabled = config.get('general')['default_api_key_enabled']
-            default_api_key = ClientDB.get(client_id=default_client_id).api_key if default_api_key_enabled else None
-            # Return the default API key
-            response_json = {
-                'enabled': default_api_key_enabled,
-                'default_api_key': default_api_key
-            }
-            return jsonify(response_json)
+    #################################################
+    # SYSTEM INFORMATION                            #
+    # (config, feature flags, health, status, etc.) #
+    #################################################
+
+    @app.route(api_url + ENDPOINT_SYS_CONFIG, methods=['GET'])
+    def api_config():
+        # Get the client UUID from the token
+        try:
+            enc_token = request.headers['Authorization'].replace('Bearer ', '')
+            token = decode_api_key(api_key=enc_token)
+            client_uuid = token['aud']
+        except (jwt.InvalidSignatureError, jwt.InvalidTokenError, KeyError, ValueError):
+            abort(HTTP_NOT_FOUND_STATUS_CODE)
+
+        # Check if the client is among the known clients
+        if client_uuid not in KNOWN_CLIENT_UUIDS.values():
+            return 'Unauthorized', 401
+
+        # Return the API config
+        api_config_ = config.get()
+
+        response_json = {
+            'auth_enabled': api_config_['general']['auth_enabled'],
+        }
+
+        return jsonify(response_json)
 
     #################
     # API endpoints #

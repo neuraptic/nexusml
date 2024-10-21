@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import List
 
 import pytest
+import requests
 
 from nexusml.api.resources.examples import Example
 from nexusml.api.resources.tasks import Task
@@ -166,6 +167,32 @@ class TestAPIKey:
         org = OrganizationDB.get(organization_id=client.organization_id)
         org_url = api_url + ENDPOINT_ORGANIZATIONS + '/' + str(org.uuid)
         _test_method(method='DELETE', url=org_url, api_key=api_key)
+
+
+class TestNoAuth:
+    """
+    Tests for endpoint access when authentication is disabled.
+    When authentication is disabled, the default client's API key is used.
+    """
+
+    @staticmethod
+    @pytest.fixture
+    def mock_config(monkeypatch) -> dict:
+        # Update config to disable authentication
+        config_dict = config.get()
+        config_dict['general']['auth_enabled'] = False
+        config.set(config_dict)
+
+        # Monkeypatch config
+        monkeypatch.setattr('nexusml.api.utils.config', config)
+        monkeypatch.setattr('nexusml.api.views.core.config', config)
+
+        return config_dict
+
+    def test_get(self, mock_config):
+        endpoint_url = get_endpoint(parameterized_endpoint=ENDPOINT_TASKS)
+        response = requests.get(endpoint_url)
+        assert response.status_code == HTTP_GET_STATUS_CODE
 
 
 def generate_api_key(scopes: List[str] = None, expire_at: datetime = None) -> str:

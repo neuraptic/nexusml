@@ -48,7 +48,7 @@ TEST_CONFIG = {
         },
     },
     'general': {
-        'default_api_key_enabled': False
+        'auth_enabled': True
     },
     'jobs': {
         'abort_upload_after': 7,

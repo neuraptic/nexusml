@@ -191,8 +191,8 @@ and [JWT](https://jwt.io/) documentation.
 
 ### Auth0 (Optional)
 
-> ⚠️ **Warning:** While Auth0 is optional when running NexusML in single-tenant, single-client mode, it is highly 
-> recommended to set up Auth0 in production environments for security reasons.
+> ⚠️ **Warning:** While Auth0 is optional when running NexusML in single-tenant mode, it is highly recommended to 
+> set up Auth0 in production environments for security reasons.
 
 NexusML uses [Auth0](https://auth0.com/) for authentication, ensuring secure login and access management. To set up 
 Auth0 for NexusML, please refer to the instructions in [auth0.md](auth0.md). After setting up Auth0, you will need to 
@@ -258,6 +258,10 @@ to install [GCC](https://gcc.gnu.org/).
 
 ## Usage
 
+> ⚠️ **Warning:** Make sure authentication is enabled in production.
+
+> ℹ️ Multi-tenancy requires authentication to be enabled.
+
 You can use NexusML in two ways:
 
 - **As a Python Package**. You can import NexusML into your Python project and use it as a library. You can either use 
@@ -269,16 +273,10 @@ You can use NexusML in two ways:
   nexusml-server
   ```
 
-If you are not running the RESTful API server in production, you can use the default API key to access the API. This 
-API key allows you to access the API without authentication, avoiding the need to set up Auth0. To get the default 
-API key, make a request to the `GET /v0/default-api-key` endpoint.
-
-> ⚠️ **Warning:** Make sure that the default API key is not enabled in production.
-
-It is important to make sure that the default API key is not enabled in production. To disable it, update the following 
-line in the `config.yaml` file located in the `nexusml` package directory:
+By default, authentication is disabled to allow for easy testing. To enable authentication, you need to set up Auth0 
+and update the following line in the `config.yaml` file located in the `nexusml` package directory:
 
 ```yaml
 general:
-  default_api_key_enabled: false
+  auth_enabled: true
 ```

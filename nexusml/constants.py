@@ -9,6 +9,7 @@ API_VERSION = 0
 # ENDPOINTS #
 #############
 
+# Swagger
 SWAGGER_URL = '/swagger/'
 SWAGGER_UI_URL = '/swagger-ui/'
 
@@ -21,8 +22,8 @@ SWAGGER_TAG_AI = 'AI'
 SWAGGER_TAG_EXAMPLES = 'Examples'
 SWAGGER_TAG_TAGS = 'Tags'
 
-# Default API key
-ENDPOINT_DEFAULT_API_KEY = '/default-api-key'
+# System Information (config, feature flags, health or status, etc.)
+ENDPOINT_SYS_CONFIG = '/config'
 
 # My Account
 ENDPOINT_MYACCOUNT = '/myaccount'

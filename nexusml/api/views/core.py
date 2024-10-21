@@ -369,30 +369,34 @@ def validate_token(resource_types: List[Type[Resource]] = None, reject_api_keys:
 
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
-            # Get the token
-            try:
-                if 'Authorization' not in request.headers or 'Bearer ' not in request.headers['Authorization']:
-                    return error_response(code=HTTP_UNAUTHORIZED_STATUS_CODE, message='Unauthorized')
-                enc_token = request.headers['Authorization'].replace('Bearer ', '')
-                # Try to decode an API key
+            # Check if a token is provided
+            token_provided = 'Authorization' in request.headers and 'Bearer ' in request.headers['Authorization']
+            if token_provided:
+                # Get the token
                 try:
-                    token = decode_api_key(api_key=enc_token)
+                    enc_token = request.headers['Authorization'].replace('Bearer ', '')
+                    # Try to decode an API key
+                    try:
+                        token = decode_api_key(api_key=enc_token)
+                        token_type = 'api_key'
+                    except (jwt.InvalidSignatureError, jwt.InvalidTokenError, ValueError):
+                        # If it's not an API key, try to decode an Auth0 token
+                        token = decode_auth0_token(auth0_token=enc_token)
+                        token_type = 'auth0_token'
+                except (jwt.InvalidSignatureError, jwt.PyJWKClientError, KeyError):
+                    # Note: `KeyError` may be raised if Auth0 env variables are not set
+                    return error_response(code=HTTP_BAD_REQUEST_STATUS_CODE, message='Invalid token')
+                except Exception:
+                    return error_response(code=HTTP_BAD_REQUEST_STATUS_CODE, message='Invalid token')
+            else:
+                # If no token is provided, check if authentication is enabled
+                if config.get('general')['auth_enabled']:
+                    return error_response(code=HTTP_UNAUTHORIZED_STATUS_CODE, message='Unauthorized')
+                else:
+                    # If authentication is disabled, use the default client's API key
+                    default_client = ClientDB.get(client_id=KNOWN_CLIENT_IDS['default'])
+                    token = decode_api_key(api_key=default_client.api_key)
                     token_type = 'api_key'
-                except (jwt.InvalidSignatureError, jwt.InvalidTokenError, ValueError):
-                    # If it's not an API key, try to decode an Auth0 token
-                    token = decode_auth0_token(auth0_token=enc_token)
-                    token_type = 'auth0_token'
-            except (jwt.InvalidSignatureError, jwt.PyJWKClientError, KeyError):
-                # Note: `KeyError` may be raised if Auth0 env variables are not set
-                return error_response(code=HTTP_BAD_REQUEST_STATUS_CODE, message='Invalid token')
-            except Exception:
-                return error_response(code=HTTP_BAD_REQUEST_STATUS_CODE, message='Invalid token')
-
-            # If the token corresponds to the default client's API key, check if the default client is enabled
-            default_client = ClientDB.get(client_id=KNOWN_CLIENT_IDS['default'])
-            default_client_enabled = config.get('general')['default_api_key_enabled']
-            if token_type == 'api_key' and token['aud'] == str(default_client.uuid) and not default_client_enabled:
-                return error_response(code=HTTP_FORBIDDEN_STATUS_CODE, message='Invalid token')
 
             # Check whether API keys are supported in this endpoint
             reject_api_keys_ = [x.upper() for x in reject_api_keys] if reject_api_keys else []
