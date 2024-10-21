@@ -1,7 +1,7 @@
 from abc import ABC
 from abc import abstractmethod
 import os
-from typing import Iterable, List, Optional, Type, Union
+from typing import Iterable, List, Type, Union
 
 from sqlalchemy import text as sql_text
 from sqlalchemy.exc import IntegrityError
