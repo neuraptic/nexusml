@@ -1,5 +1,6 @@
 boto3
 celery[redis]
+click
 cryptography
 flask == 2.2.4
 flask-apispec != 0.11.1  # version 0.11.1 breaks swagger-ui (https://github.com/jmcarp/flask-apispec/issues/235)

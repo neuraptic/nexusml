@@ -46,5 +46,10 @@ if __name__ == '__main__':
         package_data={'nexusml': ['api/templates/email_notifications.html',
                                   'api/templates/service_notifications.html',
                                   'api/templates/user_invitation.html',
-                                  'api/templates/waitlist_notification.html']}
+                                  'api/templates/waitlist_notification.html']},
+        entry_points={
+            'console_scripts': [
+                'nexusml-server = nexusml.cli:run_server'
+            ]
+        }
     )
