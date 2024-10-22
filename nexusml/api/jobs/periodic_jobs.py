@@ -653,13 +653,9 @@ def abort_incomplete_uploads():
 
 
 @shared_task
-def send_waitlist(sender: str, recipient: str):
+def send_waitlist():
     """
-    Sends a CSV file containing all the entries in the wait list to the corresponding recipient.
-
-    Args:
-        sender (str): The sender of the email.
-        recipient (str): The recipient of the email.
+    Sends a CSV file containing all the entries in the wait list.
 
     Raises:
         Exception: If sending the wait list fails.
