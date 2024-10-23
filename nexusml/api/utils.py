@@ -154,7 +154,7 @@ DEFAULT_CONFIG = {
     'storage': {
         'database': {
             'type': 'mysql',  # For the moment, only MySQL is supported.
-            'uri': 'mysql+pymysql://<user>:<password>@mysql:3306/<database>',
+            'uri': 'mysql+pymysql://<user>:<password>@localhost:3306/<database>',
         },
         'files': {
             'backend': 's3',  # "s3" or "local".
