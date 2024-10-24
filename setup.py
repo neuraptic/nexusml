@@ -18,7 +18,7 @@ _COPYRIGHT = '2024, Neuraptic AI'
 
 if __name__ == '__main__':
     # Read the long description from README.md
-    with open('README.md', 'r') as f:
+    with open('README.md', 'r', encoding='utf-8') as f:
         long_description = f.read()
 
     # Read engine requirements
