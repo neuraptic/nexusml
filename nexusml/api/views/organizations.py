@@ -50,6 +50,8 @@ from nexusml.api.schemas.organizations import UserRolesResponseSchema
 from nexusml.api.schemas.organizations import UsersPage
 from nexusml.api.utils import config
 from nexusml.api.utils import decode_api_key
+from nexusml.api.utils import get_auth0_management_api_token
+from nexusml.api.utils import get_auth0_user_data
 from nexusml.api.views.base import create_view
 from nexusml.api.views.common import PermissionAssignmentView
 from nexusml.api.views.core import agent_from_token
@@ -210,11 +212,15 @@ class OrganizationsView(_OrganizationsView):
                 if WaitList.query().count() >= max_waitlist_len:
                     oldest_entry = WaitList.query().order_by(WaitList.id_).first()
                     delete_from_db(oldest_entry)
+
+                mgmt_api_access_token = get_auth0_management_api_token()
+                auth0_user_data: dict = get_auth0_user_data(access_token=mgmt_api_access_token,
+                                                            auth0_id_or_email=g.user_auth0_id)
                 db_entry = WaitList(uuid=g.agent_uuid,
-                                    email=g.token['email'],
-                                    first_name=g.token['given_name'],
-                                    last_name=g.token['family_name'],
-                                    company=g.token['company'])
+                                    email=auth0_user_data['email'],
+                                    first_name=auth0_user_data['given_name'],
+                                    last_name=auth0_user_data['family_name'],
+                                    company=kwargs['name'])
                 save_to_db(db_entry)
             except Exception:
                 pass
