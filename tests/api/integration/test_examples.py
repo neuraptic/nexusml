@@ -5,6 +5,10 @@ from typing import Dict, List, Type, Union
 
 import pytest
 
+from nexusml.api.endpoints import ENDPOINT_EXAMPLE
+from nexusml.api.endpoints import ENDPOINT_EXAMPLE_SHAPE
+from nexusml.api.endpoints import ENDPOINT_EXAMPLE_SLICE
+from nexusml.api.endpoints import ENDPOINT_EXAMPLES
 from nexusml.api.ext import cache
 from nexusml.api.resources.examples import Comment
 from nexusml.api.resources.examples import Example
@@ -12,10 +16,6 @@ from nexusml.api.resources.examples import Shape
 from nexusml.api.resources.examples import Slice
 from nexusml.api.resources.tasks import Task
 from nexusml.constants import DATETIME_FORMAT
-from nexusml.constants import ENDPOINT_EXAMPLE
-from nexusml.constants import ENDPOINT_EXAMPLE_SHAPE
-from nexusml.constants import ENDPOINT_EXAMPLE_SLICE
-from nexusml.constants import ENDPOINT_EXAMPLES
 from nexusml.constants import HTTP_BAD_REQUEST_STATUS_CODE
 from nexusml.constants import HTTP_GET_STATUS_CODE
 from nexusml.constants import HTTP_METHOD_NOT_ALLOWED_STATUS_CODE

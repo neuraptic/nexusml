@@ -1,7 +1,7 @@
+from nexusml.api.endpoints import ENDPOINT_MYACCOUNT_NOTIFICATION
 from nexusml.api.resources.base import Resource
 from nexusml.api.schemas.myaccount import AggregatedNotificationSchema
 from nexusml.api.schemas.myaccount import NotificationSchema
-from nexusml.constants import ENDPOINT_MYACCOUNT_NOTIFICATION
 from nexusml.database.notifications import AggregatedNotificationDB
 from nexusml.database.notifications import NotificationDB
 

@@ -3,6 +3,17 @@ import urllib.parse
 
 import pytest
 
+from nexusml.api.endpoints import ENDPOINT_AI_MODEL
+from nexusml.api.endpoints import ENDPOINT_AI_PREDICTION_LOG
+from nexusml.api.endpoints import ENDPOINT_EXAMPLE
+from nexusml.api.endpoints import ENDPOINT_EXAMPLE_SHAPE
+from nexusml.api.endpoints import ENDPOINT_EXAMPLE_SLICE
+from nexusml.api.endpoints import ENDPOINT_INPUT_ELEMENT
+from nexusml.api.endpoints import ENDPOINT_METADATA_ELEMENT
+from nexusml.api.endpoints import ENDPOINT_OUTPUT_ELEMENT
+from nexusml.api.endpoints import ENDPOINT_TAG
+from nexusml.api.endpoints import ENDPOINT_TASK
+from nexusml.api.endpoints import ENDPOINT_TASK_FILE
 from nexusml.api.ext import cache
 from nexusml.api.resources.ai import AIModel
 from nexusml.api.resources.ai import PredictionLog
@@ -15,17 +26,6 @@ from nexusml.api.resources.tasks import InputElement
 from nexusml.api.resources.tasks import MetadataElement
 from nexusml.api.resources.tasks import OutputElement
 from nexusml.api.resources.tasks import Task
-from nexusml.constants import ENDPOINT_AI_MODEL
-from nexusml.constants import ENDPOINT_AI_PREDICTION_LOG
-from nexusml.constants import ENDPOINT_EXAMPLE
-from nexusml.constants import ENDPOINT_EXAMPLE_SHAPE
-from nexusml.constants import ENDPOINT_EXAMPLE_SLICE
-from nexusml.constants import ENDPOINT_INPUT_ELEMENT
-from nexusml.constants import ENDPOINT_METADATA_ELEMENT
-from nexusml.constants import ENDPOINT_OUTPUT_ELEMENT
-from nexusml.constants import ENDPOINT_TAG
-from nexusml.constants import ENDPOINT_TASK
-from nexusml.constants import ENDPOINT_TASK_FILE
 from nexusml.database.organizations import MutableEntity
 from nexusml.enums import AIEnvironment
 from tests.api.conftest import restore_db

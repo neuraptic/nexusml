@@ -11,6 +11,10 @@ from sqlalchemy import func as sql_func
 from sqlalchemy.exc import DatabaseError
 from sqlalchemy.exc import StatementError
 
+from nexusml.api.endpoints import ENDPOINT_EXAMPLE
+from nexusml.api.endpoints import ENDPOINT_EXAMPLE_COMMENTS
+from nexusml.api.endpoints import ENDPOINT_EXAMPLE_SHAPE
+from nexusml.api.endpoints import ENDPOINT_EXAMPLE_SLICE
 from nexusml.api.resources.base import InvalidDataError
 from nexusml.api.resources.base import QuotaError
 from nexusml.api.resources.base import Resource
@@ -37,10 +41,6 @@ from nexusml.api.schemas.examples import ShapeRequest
 from nexusml.api.schemas.examples import ShapeResponse
 from nexusml.api.schemas.examples import SliceRequest
 from nexusml.api.schemas.examples import SliceResponse
-from nexusml.constants import ENDPOINT_EXAMPLE
-from nexusml.constants import ENDPOINT_EXAMPLE_COMMENTS
-from nexusml.constants import ENDPOINT_EXAMPLE_SHAPE
-from nexusml.constants import ENDPOINT_EXAMPLE_SLICE
 from nexusml.database.core import db
 from nexusml.database.core import db_commit
 from nexusml.database.core import db_execute

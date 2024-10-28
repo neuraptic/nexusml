@@ -16,6 +16,7 @@ from webargs.flaskparser import parser
 import yaml
 
 from nexusml.api import routes
+from nexusml.api.endpoints import ENDPOINT_SYS_CONFIG
 from nexusml.api.ext import cache
 from nexusml.api.ext import celery
 from nexusml.api.ext import cors
@@ -34,7 +35,6 @@ from nexusml.constants import CONFIG_FILE
 from nexusml.constants import DEFAULT_CELERY_BROKER_URL
 from nexusml.constants import DEFAULT_CELERY_RESULT_BACKEND
 from nexusml.constants import DEFAULT_PLAN_ID
-from nexusml.constants import ENDPOINT_SYS_CONFIG
 from nexusml.constants import HTTP_NOT_FOUND_STATUS_CODE
 from nexusml.constants import SWAGGER_UI_URL
 from nexusml.constants import SWAGGER_URL

@@ -6,6 +6,18 @@ from typing import List, Type, Union
 import pytest
 import requests
 
+from nexusml.api.endpoints import ENDPOINT_INPUT_CATEGORY
+from nexusml.api.endpoints import ENDPOINT_INPUT_ELEMENT
+from nexusml.api.endpoints import ENDPOINT_METADATA_CATEGORY
+from nexusml.api.endpoints import ENDPOINT_METADATA_ELEMENT
+from nexusml.api.endpoints import ENDPOINT_OUTPUT_CATEGORY
+from nexusml.api.endpoints import ENDPOINT_OUTPUT_ELEMENT
+from nexusml.api.endpoints import ENDPOINT_TASK
+from nexusml.api.endpoints import ENDPOINT_TASK_QUOTA_USAGE
+from nexusml.api.endpoints import ENDPOINT_TASK_SCHEMA
+from nexusml.api.endpoints import ENDPOINT_TASK_SETTINGS
+from nexusml.api.endpoints import ENDPOINT_TASK_STATUS
+from nexusml.api.endpoints import ENDPOINT_TASKS
 from nexusml.api.ext import cache
 from nexusml.api.resources.tasks import InputCategory
 from nexusml.api.resources.tasks import InputElement
@@ -15,18 +27,6 @@ from nexusml.api.resources.tasks import OutputCategory
 from nexusml.api.resources.tasks import OutputElement
 from nexusml.api.resources.tasks import Task
 from nexusml.constants import DATETIME_FORMAT
-from nexusml.constants import ENDPOINT_INPUT_CATEGORY
-from nexusml.constants import ENDPOINT_INPUT_ELEMENT
-from nexusml.constants import ENDPOINT_METADATA_CATEGORY
-from nexusml.constants import ENDPOINT_METADATA_ELEMENT
-from nexusml.constants import ENDPOINT_OUTPUT_CATEGORY
-from nexusml.constants import ENDPOINT_OUTPUT_ELEMENT
-from nexusml.constants import ENDPOINT_TASK
-from nexusml.constants import ENDPOINT_TASK_QUOTA_USAGE
-from nexusml.constants import ENDPOINT_TASK_SCHEMA
-from nexusml.constants import ENDPOINT_TASK_SETTINGS
-from nexusml.constants import ENDPOINT_TASK_STATUS
-from nexusml.constants import ENDPOINT_TASKS
 from nexusml.constants import HTTP_BAD_REQUEST_STATUS_CODE
 from nexusml.constants import HTTP_CONFLICT_STATUS_CODE
 from nexusml.constants import HTTP_DELETE_STATUS_CODE

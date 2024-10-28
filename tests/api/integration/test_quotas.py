@@ -3,11 +3,11 @@ from unittest.mock import MagicMock
 import jwt
 import pytest
 
+from nexusml.api.endpoints import ENDPOINT_MYACCOUNT
+from nexusml.api.endpoints import ENDPOINT_ORGANIZATION
+from nexusml.api.endpoints import ENDPOINT_TASKS
 from nexusml.api.resources.organizations import Organization
 from nexusml.constants import ADMIN_ROLE
-from nexusml.constants import ENDPOINT_MYACCOUNT
-from nexusml.constants import ENDPOINT_ORGANIZATION
-from nexusml.constants import ENDPOINT_TASKS
 from nexusml.constants import HTTP_UNPROCESSABLE_ENTITY_STATUS_CODE
 from nexusml.database.core import save_to_db
 from nexusml.database.organizations import ClientDB

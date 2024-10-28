@@ -32,6 +32,8 @@ from werkzeug.test import TestResponse
 
 from nexusml import constants  # Import the whole module for monkey patches
 from nexusml.api import create_app
+from nexusml.api.endpoints import ENDPOINT_ORG_FILES
+from nexusml.api.endpoints import ENDPOINT_TASK_FILES
 from nexusml.api.ext import cache
 from nexusml.api.resources.organizations import Organization
 from nexusml.api.resources.tasks import Task
@@ -381,9 +383,9 @@ class MockClient:
             # Upload file metadata to the API
             api_url = config.get('server')['api_url']
             if isinstance(parent, Task):
-                endpoint = constants.ENDPOINT_TASK_FILES.replace('<task_id>', parent.public_id())
+                endpoint = ENDPOINT_TASK_FILES.replace('<task_id>', parent.public_id())
             else:
-                endpoint = constants.ENDPOINT_ORG_FILES.replace('<organization_id>', parent.public_id())
+                endpoint = ENDPOINT_ORG_FILES.replace('<organization_id>', parent.public_id())
             endpoint_url = API_DOMAIN + api_url + endpoint
             api_response = self.send_request(method='POST', url=endpoint_url, json=file)
             if api_response.status_code != constants.HTTP_POST_STATUS_CODE:

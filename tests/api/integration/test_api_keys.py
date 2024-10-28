@@ -4,21 +4,21 @@ from typing import List
 import pytest
 import requests
 
+from nexusml.api.endpoints import ENDPOINT_EXAMPLE
+from nexusml.api.endpoints import ENDPOINT_MYACCOUNT
+from nexusml.api.endpoints import ENDPOINT_MYACCOUNT_CLIENT_SETTINGS
+from nexusml.api.endpoints import ENDPOINT_MYACCOUNT_NOTIFICATIONS
+from nexusml.api.endpoints import ENDPOINT_MYACCOUNT_ORGANIZATION
+from nexusml.api.endpoints import ENDPOINT_MYACCOUNT_PERMISSIONS
+from nexusml.api.endpoints import ENDPOINT_MYACCOUNT_SETTINGS
+from nexusml.api.endpoints import ENDPOINT_ORGANIZATIONS
+from nexusml.api.endpoints import ENDPOINT_TASK
+from nexusml.api.endpoints import ENDPOINT_TASKS
 from nexusml.api.resources.examples import Example
 from nexusml.api.resources.tasks import Task
 from nexusml.api.utils import API_DOMAIN
 from nexusml.api.utils import config
 from nexusml.api.views.core import AUTH0_REQUIRED_ERR_MSG
-from nexusml.constants import ENDPOINT_EXAMPLE
-from nexusml.constants import ENDPOINT_MYACCOUNT
-from nexusml.constants import ENDPOINT_MYACCOUNT_CLIENT_SETTINGS
-from nexusml.constants import ENDPOINT_MYACCOUNT_NOTIFICATIONS
-from nexusml.constants import ENDPOINT_MYACCOUNT_ORGANIZATION
-from nexusml.constants import ENDPOINT_MYACCOUNT_PERMISSIONS
-from nexusml.constants import ENDPOINT_MYACCOUNT_SETTINGS
-from nexusml.constants import ENDPOINT_ORGANIZATIONS
-from nexusml.constants import ENDPOINT_TASK
-from nexusml.constants import ENDPOINT_TASKS
 from nexusml.constants import HTTP_DELETE_STATUS_CODE
 from nexusml.constants import HTTP_FORBIDDEN_STATUS_CODE
 from nexusml.constants import HTTP_GET_STATUS_CODE

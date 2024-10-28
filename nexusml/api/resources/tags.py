@@ -1,7 +1,7 @@
+from nexusml.api.endpoints import ENDPOINT_TAG
 from nexusml.api.resources.tasks import TaskResource
 from nexusml.api.schemas.tags import TagRequest
 from nexusml.api.schemas.tags import TagResponse
-from nexusml.constants import ENDPOINT_TAG
 from nexusml.database.tags import TagDB
 from nexusml.enums import NotificationSource
 

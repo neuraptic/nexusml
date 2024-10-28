@@ -32,6 +32,18 @@ import pytest
 import requests
 
 from nexusml.api import create_app
+from nexusml.api.endpoints import ENDPOINT_ORG_FILE
+from nexusml.api.endpoints import ENDPOINT_ORG_FILES
+from nexusml.api.endpoints import ENDPOINT_ORG_LOCAL_FILE_STORE_DOWNLOAD
+from nexusml.api.endpoints import ENDPOINT_ORG_LOCAL_FILE_STORE_MULTIPART_UPLOAD
+from nexusml.api.endpoints import ENDPOINT_ORG_LOCAL_FILE_STORE_UPLOAD
+from nexusml.api.endpoints import ENDPOINT_TASK_FILE
+from nexusml.api.endpoints import ENDPOINT_TASK_FILE_PARTS
+from nexusml.api.endpoints import ENDPOINT_TASK_FILE_PARTS_COMPLETION
+from nexusml.api.endpoints import ENDPOINT_TASK_FILES
+from nexusml.api.endpoints import ENDPOINT_TASK_LOCAL_FILE_STORE_DOWNLOAD
+from nexusml.api.endpoints import ENDPOINT_TASK_LOCAL_FILE_STORE_MULTIPART_UPLOAD
+from nexusml.api.endpoints import ENDPOINT_TASK_LOCAL_FILE_STORE_UPLOAD
 from nexusml.api.ext import cache
 from nexusml.api.resources.files import OrgFile
 from nexusml.api.resources.files import TaskFile
@@ -40,18 +52,6 @@ from nexusml.api.resources.tasks import Task
 from nexusml.api.utils import get_local_file_storage_config
 from nexusml.api.utils import NexusMLConfig
 from nexusml.constants import DATETIME_FORMAT
-from nexusml.constants import ENDPOINT_ORG_FILE
-from nexusml.constants import ENDPOINT_ORG_FILES
-from nexusml.constants import ENDPOINT_ORG_LOCAL_FILE_STORE_DOWNLOAD
-from nexusml.constants import ENDPOINT_ORG_LOCAL_FILE_STORE_MULTIPART_UPLOAD
-from nexusml.constants import ENDPOINT_ORG_LOCAL_FILE_STORE_UPLOAD
-from nexusml.constants import ENDPOINT_TASK_FILE
-from nexusml.constants import ENDPOINT_TASK_FILE_PARTS
-from nexusml.constants import ENDPOINT_TASK_FILE_PARTS_COMPLETION
-from nexusml.constants import ENDPOINT_TASK_FILES
-from nexusml.constants import ENDPOINT_TASK_LOCAL_FILE_STORE_DOWNLOAD
-from nexusml.constants import ENDPOINT_TASK_LOCAL_FILE_STORE_MULTIPART_UPLOAD
-from nexusml.constants import ENDPOINT_TASK_LOCAL_FILE_STORE_UPLOAD
 from nexusml.constants import HTTP_GET_STATUS_CODE
 from nexusml.constants import HTTP_METHOD_NOT_ALLOWED_STATUS_CODE
 from nexusml.constants import HTTP_NOT_FOUND_STATUS_CODE

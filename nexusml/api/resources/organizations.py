@@ -7,6 +7,11 @@ from flask import g
 import requests
 from sqlalchemy.exc import OperationalError
 
+from nexusml.api.endpoints import ENDPOINT_CLIENT
+from nexusml.api.endpoints import ENDPOINT_COLLABORATOR
+from nexusml.api.endpoints import ENDPOINT_ORGANIZATION
+from nexusml.api.endpoints import ENDPOINT_ROLE
+from nexusml.api.endpoints import ENDPOINT_USER
 from nexusml.api.ext import cache
 from nexusml.api.resources.base import DuplicateResourceError
 from nexusml.api.resources.base import InvalidDataError
@@ -33,11 +38,6 @@ from nexusml.api.utils import get_auth0_management_api_token
 from nexusml.api.utils import get_auth0_user_data
 from nexusml.constants import ADMIN_ROLE
 from nexusml.constants import API_NAME
-from nexusml.constants import ENDPOINT_CLIENT
-from nexusml.constants import ENDPOINT_COLLABORATOR
-from nexusml.constants import ENDPOINT_ORGANIZATION
-from nexusml.constants import ENDPOINT_ROLE
-from nexusml.constants import ENDPOINT_USER
 from nexusml.constants import MAINTAINER_ROLE
 from nexusml.database.base import Entity
 from nexusml.database.core import save_to_db

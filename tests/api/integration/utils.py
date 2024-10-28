@@ -16,6 +16,8 @@ import requests
 from sqlalchemy import and_ as sql_and
 from sqlalchemy import bindparam
 
+from nexusml.api.endpoints import ENDPOINT_AI_PREDICTION_LOG
+from nexusml.api.endpoints import ENDPOINT_EXAMPLE
 from nexusml.api.ext import cache
 from nexusml.api.resources.ai import PredictionLog
 from nexusml.api.resources.base import Permission
@@ -27,8 +29,6 @@ from nexusml.api.utils import API_DOMAIN
 from nexusml.api.utils import config
 from nexusml.api.utils import decode_auth0_token
 from nexusml.constants import DATETIME_FORMAT
-from nexusml.constants import ENDPOINT_AI_PREDICTION_LOG
-from nexusml.constants import ENDPOINT_EXAMPLE
 from nexusml.constants import HTTP_BAD_REQUEST_STATUS_CODE
 from nexusml.constants import HTTP_CONFLICT_STATUS_CODE
 from nexusml.constants import HTTP_DELETE_STATUS_CODE

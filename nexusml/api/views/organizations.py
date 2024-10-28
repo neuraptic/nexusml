@@ -13,6 +13,7 @@ from flask_apispec import marshal_with
 from flask_apispec import use_kwargs
 from flask_mail import Message
 
+from nexusml.api.endpoints import ENDPOINT_CLIENT_API_KEY
 from nexusml.api.ext import mail
 from nexusml.api.resources.base import dump
 from nexusml.api.resources.base import DuplicateResourceError
@@ -65,7 +66,6 @@ from nexusml.api.views.utils import paging_url_params
 from nexusml.constants import ADMIN_ROLE
 from nexusml.constants import API_NAME
 from nexusml.constants import DATETIME_FORMAT
-from nexusml.constants import ENDPOINT_CLIENT_API_KEY
 from nexusml.constants import FREE_PLAN_ID
 from nexusml.constants import GENERIC_DOMAINS
 from nexusml.constants import HTTP_BAD_REQUEST_STATUS_CODE

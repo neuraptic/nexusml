@@ -3,10 +3,10 @@ from concurrent.futures import wait
 
 import pytest
 
+from nexusml.api.endpoints import ENDPOINT_EXAMPLES
+from nexusml.api.endpoints import ENDPOINT_TASK
 from nexusml.api.resources.tasks import Task
 from nexusml.api.views.core import limiter
-from nexusml.constants import ENDPOINT_EXAMPLES
-from nexusml.constants import ENDPOINT_TASK
 from nexusml.constants import HTTP_GET_STATUS_CODE
 from nexusml.constants import HTTP_PAYLOAD_TOO_LARGE_STATUS_CODE
 from nexusml.constants import HTTP_TOO_MANY_REQUESTS_STATUS_CODE

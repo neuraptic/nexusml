@@ -6,24 +6,24 @@ import uuid
 import pytest
 from sqlalchemy import and_ as sql_and
 
+from nexusml.api.endpoints import ENDPOINT_AL_SERVICE
+from nexusml.api.endpoints import ENDPOINT_AL_SERVICE_NOTIFICATIONS
+from nexusml.api.endpoints import ENDPOINT_AL_SERVICE_STATUS
+from nexusml.api.endpoints import ENDPOINT_CL_SERVICE
+from nexusml.api.endpoints import ENDPOINT_CL_SERVICE_NOTIFICATIONS
+from nexusml.api.endpoints import ENDPOINT_CL_SERVICE_STATUS
+from nexusml.api.endpoints import ENDPOINT_INFERENCE_SERVICE
+from nexusml.api.endpoints import ENDPOINT_INFERENCE_SERVICE_NOTIFICATIONS
+from nexusml.api.endpoints import ENDPOINT_INFERENCE_SERVICE_STATUS
+from nexusml.api.endpoints import ENDPOINT_MONITORING_SERVICE
+from nexusml.api.endpoints import ENDPOINT_MONITORING_SERVICE_NOTIFICATIONS
+from nexusml.api.endpoints import ENDPOINT_MONITORING_SERVICE_STATUS
+from nexusml.api.endpoints import ENDPOINT_MONITORING_SERVICE_TEMPLATES
+from nexusml.api.endpoints import ENDPOINT_SERVICES
 from nexusml.api.ext import cache
 from nexusml.api.resources.tasks import Task
 from nexusml.api.views import services
 from nexusml.constants import DATETIME_FORMAT
-from nexusml.constants import ENDPOINT_AL_SERVICE
-from nexusml.constants import ENDPOINT_AL_SERVICE_NOTIFICATIONS
-from nexusml.constants import ENDPOINT_AL_SERVICE_STATUS
-from nexusml.constants import ENDPOINT_CL_SERVICE
-from nexusml.constants import ENDPOINT_CL_SERVICE_NOTIFICATIONS
-from nexusml.constants import ENDPOINT_CL_SERVICE_STATUS
-from nexusml.constants import ENDPOINT_INFERENCE_SERVICE
-from nexusml.constants import ENDPOINT_INFERENCE_SERVICE_NOTIFICATIONS
-from nexusml.constants import ENDPOINT_INFERENCE_SERVICE_STATUS
-from nexusml.constants import ENDPOINT_MONITORING_SERVICE
-from nexusml.constants import ENDPOINT_MONITORING_SERVICE_NOTIFICATIONS
-from nexusml.constants import ENDPOINT_MONITORING_SERVICE_STATUS
-from nexusml.constants import ENDPOINT_MONITORING_SERVICE_TEMPLATES
-from nexusml.constants import ENDPOINT_SERVICES
 from nexusml.constants import FREE_PLAN_ID
 from nexusml.constants import HTTP_BAD_REQUEST_STATUS_CODE
 from nexusml.constants import HTTP_GET_STATUS_CODE

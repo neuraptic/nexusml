@@ -2,6 +2,9 @@ from typing import List, Type
 
 import pytest
 
+from nexusml.api.endpoints import ENDPOINT_EXAMPLE
+from nexusml.api.endpoints import ENDPOINT_TAG
+from nexusml.api.endpoints import ENDPOINT_TASK
 from nexusml.api.ext import cache
 from nexusml.api.resources.ai import AIModel
 from nexusml.api.resources.ai import PredictionLog
@@ -13,9 +16,6 @@ from nexusml.api.resources.organizations import Organization
 from nexusml.api.resources.tags import Tag
 from nexusml.api.resources.tasks import Task
 from nexusml.constants import ADMIN_ROLE
-from nexusml.constants import ENDPOINT_EXAMPLE
-from nexusml.constants import ENDPOINT_TAG
-from nexusml.constants import ENDPOINT_TASK
 from nexusml.constants import HTTP_DELETE_STATUS_CODE
 from nexusml.constants import HTTP_FORBIDDEN_STATUS_CODE
 from nexusml.constants import HTTP_GET_STATUS_CODE

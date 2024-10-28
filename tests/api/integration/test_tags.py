@@ -1,9 +1,9 @@
 import pytest
 
+from nexusml.api.endpoints import ENDPOINT_TAG
+from nexusml.api.endpoints import ENDPOINT_TAGS
 from nexusml.api.resources.tags import Tag
 from nexusml.api.resources.tasks import Task
-from nexusml.constants import ENDPOINT_TAG
-from nexusml.constants import ENDPOINT_TAGS
 from nexusml.constants import HTTP_GET_STATUS_CODE
 from nexusml.constants import HTTP_METHOD_NOT_ALLOWED_STATUS_CODE
 from nexusml.constants import HTTP_POST_STATUS_CODE

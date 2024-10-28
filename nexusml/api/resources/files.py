@@ -5,6 +5,8 @@ from typing import Iterable, Type, Union
 
 from flask import url_for
 
+from nexusml.api.endpoints import ENDPOINT_ORG_FILE
+from nexusml.api.endpoints import ENDPOINT_TASK_FILE
 from nexusml.api.ext import cache
 from nexusml.api.resources.base import PermissionDeniedError
 from nexusml.api.resources.base import QuotaError
@@ -23,8 +25,6 @@ from nexusml.api.utils import get_file_storage_backend
 from nexusml.api.utils import get_local_file_storage_config
 from nexusml.api.utils import save_thumbnail_to_local_file_store
 from nexusml.api.utils import save_thumbnail_to_s3
-from nexusml.constants import ENDPOINT_ORG_FILE
-from nexusml.constants import ENDPOINT_TASK_FILE
 from nexusml.constants import PREFIX_ORG_PICTURES
 from nexusml.constants import PREFIX_ORGANIZATIONS
 from nexusml.constants import PREFIX_TASK_INPUTS

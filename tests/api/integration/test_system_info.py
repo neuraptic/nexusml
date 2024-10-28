@@ -4,7 +4,7 @@ import os
 import pytest
 import requests
 
-from nexusml.constants import ENDPOINT_SYS_CONFIG
+from nexusml.api.endpoints import ENDPOINT_SYS_CONFIG
 from nexusml.constants import HTTP_GET_STATUS_CODE
 from nexusml.constants import HTTP_NOT_FOUND_STATUS_CODE
 from nexusml.env import ENV_WEB_CLIENT_ID

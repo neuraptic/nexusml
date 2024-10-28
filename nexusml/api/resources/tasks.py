@@ -7,6 +7,13 @@ from sqlalchemy import text as sql_text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.exc import OperationalError
 
+from nexusml.api.endpoints import ENDPOINT_INPUT_CATEGORY
+from nexusml.api.endpoints import ENDPOINT_INPUT_ELEMENT
+from nexusml.api.endpoints import ENDPOINT_METADATA_CATEGORY
+from nexusml.api.endpoints import ENDPOINT_METADATA_ELEMENT
+from nexusml.api.endpoints import ENDPOINT_OUTPUT_CATEGORY
+from nexusml.api.endpoints import ENDPOINT_OUTPUT_ELEMENT
+from nexusml.api.endpoints import ENDPOINT_TASK
 from nexusml.api.resources.base import dump
 from nexusml.api.resources.base import DuplicateResourceError
 from nexusml.api.resources.base import InvalidDataError
@@ -26,13 +33,6 @@ from nexusml.api.schemas.tasks import ElementResponse
 from nexusml.api.schemas.tasks import TaskPOSTRequest
 from nexusml.api.schemas.tasks import TaskResponse
 from nexusml.api.schemas.tasks import TaskSchemaResponse
-from nexusml.constants import ENDPOINT_INPUT_CATEGORY
-from nexusml.constants import ENDPOINT_INPUT_ELEMENT
-from nexusml.constants import ENDPOINT_METADATA_CATEGORY
-from nexusml.constants import ENDPOINT_METADATA_ELEMENT
-from nexusml.constants import ENDPOINT_OUTPUT_CATEGORY
-from nexusml.constants import ENDPOINT_OUTPUT_ELEMENT
-from nexusml.constants import ENDPOINT_TASK
 from nexusml.database.ai import PredictionDB
 from nexusml.database.base import Entity
 from nexusml.database.core import db_commit

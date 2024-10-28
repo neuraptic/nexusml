@@ -4,17 +4,17 @@ from typing import Iterable, Union
 
 import pytest
 
+from nexusml.api.endpoints import ENDPOINT_EXAMPLE
+from nexusml.api.endpoints import ENDPOINT_MYACCOUNT
+from nexusml.api.endpoints import ENDPOINT_MYACCOUNT_NOTIFICATIONS
+from nexusml.api.endpoints import ENDPOINT_MYACCOUNT_ORGANIZATION
+from nexusml.api.endpoints import ENDPOINT_MYACCOUNT_PERMISSIONS
+from nexusml.api.endpoints import ENDPOINT_MYACCOUNT_ROLES
+from nexusml.api.endpoints import ENDPOINT_MYACCOUNT_SETTINGS
+from nexusml.api.endpoints import ENDPOINT_TASK
+from nexusml.api.endpoints import ENDPOINT_TASK_FILE
 from nexusml.api.utils import API_DOMAIN
 from nexusml.api.utils import config
-from nexusml.constants import ENDPOINT_EXAMPLE
-from nexusml.constants import ENDPOINT_MYACCOUNT
-from nexusml.constants import ENDPOINT_MYACCOUNT_NOTIFICATIONS
-from nexusml.constants import ENDPOINT_MYACCOUNT_ORGANIZATION
-from nexusml.constants import ENDPOINT_MYACCOUNT_PERMISSIONS
-from nexusml.constants import ENDPOINT_MYACCOUNT_ROLES
-from nexusml.constants import ENDPOINT_MYACCOUNT_SETTINGS
-from nexusml.constants import ENDPOINT_TASK
-from nexusml.constants import ENDPOINT_TASK_FILE
 from nexusml.constants import HTTP_DELETE_STATUS_CODE
 from nexusml.constants import HTTP_GET_STATUS_CODE
 from nexusml.constants import HTTP_PUT_STATUS_CODE

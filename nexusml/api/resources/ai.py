@@ -7,6 +7,8 @@ from typing import Iterable, List, Optional, TYPE_CHECKING, Union
 from sqlalchemy.exc import DatabaseError
 from sqlalchemy.exc import StatementError
 
+from nexusml.api.endpoints import ENDPOINT_AI_MODEL
+from nexusml.api.endpoints import ENDPOINT_AI_PREDICTION_LOG
 from nexusml.api.resources.base import DuplicateResourceError
 from nexusml.api.resources.base import ImmutableResourceError
 from nexusml.api.resources.base import InvalidDataError
@@ -30,8 +32,6 @@ from nexusml.api.schemas.ai import PredictionLogRequest
 from nexusml.api.schemas.ai import PredictionLogResponse
 from nexusml.api.schemas.ai import PredictionLogSchema
 from nexusml.api.schemas.base import ResourceResponseSchema
-from nexusml.constants import ENDPOINT_AI_MODEL
-from nexusml.constants import ENDPOINT_AI_PREDICTION_LOG
 from nexusml.database.ai import AIModelDB
 from nexusml.database.ai import PredictionDB
 from nexusml.database.ai import PredScores

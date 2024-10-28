@@ -8,6 +8,14 @@ from typing import Dict, List, Tuple
 import pytest
 from sqlalchemy.orm import make_transient
 
+from nexusml.api.endpoints import ENDPOINT_AI_DEPLOYMENT
+from nexusml.api.endpoints import ENDPOINT_AI_INFERENCE
+from nexusml.api.endpoints import ENDPOINT_AI_MODEL
+from nexusml.api.endpoints import ENDPOINT_AI_MODELS
+from nexusml.api.endpoints import ENDPOINT_AI_PREDICTION_LOG
+from nexusml.api.endpoints import ENDPOINT_AI_PREDICTION_LOGS
+from nexusml.api.endpoints import ENDPOINT_AI_TESTING
+from nexusml.api.endpoints import ENDPOINT_AI_TRAINING
 from nexusml.api.ext import cache
 from nexusml.api.ext import redis_buffer
 from nexusml.api.resources.ai import AIModel
@@ -16,14 +24,6 @@ from nexusml.api.resources.tasks import Task
 from nexusml.api.schemas.ai import PredictionLogResponse
 from nexusml.api.views.ai import save_buffered_prediction_logs
 from nexusml.constants import DATETIME_FORMAT
-from nexusml.constants import ENDPOINT_AI_DEPLOYMENT
-from nexusml.constants import ENDPOINT_AI_INFERENCE
-from nexusml.constants import ENDPOINT_AI_MODEL
-from nexusml.constants import ENDPOINT_AI_MODELS
-from nexusml.constants import ENDPOINT_AI_PREDICTION_LOG
-from nexusml.constants import ENDPOINT_AI_PREDICTION_LOGS
-from nexusml.constants import ENDPOINT_AI_TESTING
-from nexusml.constants import ENDPOINT_AI_TRAINING
 from nexusml.constants import HTTP_BAD_REQUEST_STATUS_CODE
 from nexusml.constants import HTTP_GET_STATUS_CODE
 from nexusml.constants import HTTP_METHOD_NOT_ALLOWED_STATUS_CODE
