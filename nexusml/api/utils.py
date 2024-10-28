@@ -18,7 +18,6 @@ from cryptography.hazmat.primitives.asymmetric.types import PrivateKeyTypes
 from flask import Flask
 import jwt
 from PIL import Image
-from PIL._typing import StrOrBytesPath
 from platformdirs import user_data_dir
 import requests
 from requests import Response
@@ -610,12 +609,12 @@ def get_file_storage_backend() -> FileStorageBackend:
     return FileStorageBackend[config.get('storage')['files']['backend'].upper()]
 
 
-def generate_thumbnail(fp: Union[StrOrBytesPath, IO[bytes]]):
+def generate_thumbnail(fp: Union[str, IO[bytes]]):
     """
     Generates a thumbnail from an image.
 
     Args:
-        fp (Union[StrOrBytesPath, IO[bytes]]): The file path or file object of the image.
+        fp (Union[str, IO[bytes]]): The file path or file object of the image.
 
     Returns:
         tempfile.NamedTemporaryFile: The temporary file containing the generated thumbnail.
