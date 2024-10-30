@@ -11,7 +11,7 @@ from torch import optim
 from torch.utils.data import DataLoader
 from transformers import RobertaModel
 
-from nexusml.engine.data.dataset.nlp.classification import NLPDataset
+from nexusml.engine.data.datasets.nlp.classification import NLPDataset
 from nexusml.engine.data.transforms.base import DataFrameTransforms
 from nexusml.engine.data.transforms.base import ElementTransforms
 from nexusml.engine.data.utils import predictions_to_example_format

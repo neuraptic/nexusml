@@ -13,7 +13,7 @@ from torchvision.models import efficientnet_b2
 from torchvision.models import resnet50
 from torchvision.models import resnet152
 
-from nexusml.engine.data.dataset.vision.pytorch import ImageDataset
+from nexusml.engine.data.datasets.vision.pytorch import ImageDataset
 from nexusml.engine.data.transforms.base import DataFrameTransforms
 from nexusml.engine.data.transforms.base import ElementTransforms
 from nexusml.engine.data.utils import predictions_to_example_format

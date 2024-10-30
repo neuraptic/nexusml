@@ -306,22 +306,22 @@ Module Documentation
     :undoc-members:
     :show-inheritance:
 
-.. automodule:: nexusml.engine.data.dataset.audio.pytorch
+.. automodule:: nexusml.engine.data.datasets.audio.pytorch
     :members:
     :undoc-members:
     :show-inheritance:
 
-.. automodule:: nexusml.engine.data.dataset.nlp.classification
+.. automodule:: nexusml.engine.data.datasets.nlp.classification
     :members:
     :undoc-members:
     :show-inheritance:
 
-.. automodule:: nexusml.engine.data.dataset.tabular.pytorch
+.. automodule:: nexusml.engine.data.datasets.tabular.pytorch
     :members:
     :undoc-members:
     :show-inheritance:
 
-.. automodule:: nexusml.engine.data.dataset.vision.pytorch
+.. automodule:: nexusml.engine.data.datasets.vision.pytorch
     :members:
     :undoc-members:
     :show-inheritance:
