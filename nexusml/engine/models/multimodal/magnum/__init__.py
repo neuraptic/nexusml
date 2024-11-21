@@ -453,8 +453,7 @@ class MagnumModel(Model):
             },
             'training': {
                 'batch_size': 8,
-                # ToDo: change this to 30
-                'epochs': 3,
+                'epochs': 30,
                 'loss_function': {
                     'args': {},
                     'class': 'nexusml.engine.models.common.pytorch.BasicLossFunction'
