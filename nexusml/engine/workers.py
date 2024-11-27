@@ -340,7 +340,7 @@ class EngineWorker(abc.ABC):
         except Exception as e:
             raise ExperimentError('Error retrieving the best model for the experiment')
 
-    def train(self, model_uuid: Optional[str] = None):
+    def train(self, model_uuid: Optional[str] = None, **kwargs):
         """
         Handles the training or retraining process of a model. If no model_uuid is provided,
         it initiates the first training process. If a model_uuid is provided, the model is retrieved,
@@ -361,6 +361,7 @@ class EngineWorker(abc.ABC):
 
         Args:
             model_uuid (Optional[str]): UUID of the model to be retrained. If None, performs first training.
+            **kwargs: Additional arguments for future extensions or subclass-specific behavior.
 
         Returns:
             None

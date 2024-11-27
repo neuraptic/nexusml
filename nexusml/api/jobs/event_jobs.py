@@ -95,7 +95,7 @@ def run_mon_service(task_id: int) -> None:
 
 
 @shared_task
-def train(task_uuid: str, model_uuid: Optional[str] = None):
+def train(task_uuid: str, model_uuid: Optional[str] = None, **kwargs):
     engine_type = get_engine_type()
     engine = get_engine(engine_type=engine_type, task_uuid=task_uuid)
-    engine.train(model_uuid=model_uuid)
+    engine.train(model_uuid=model_uuid, **kwargs)
