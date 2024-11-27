@@ -60,5 +60,5 @@ def get_s3_config() -> dict:
     """
     # TODO: Remove dependency on `nexusml.api`. This is a temporary solution.
     # Note: We cannot import `nexusml.api.config` at the top of the file because it creates a circular import.
-    from nexusml.api import config
+    from nexusml.api import config  # pylint: disable=import-outside-toplevel
     return config.get('storage')['files']['s3']
