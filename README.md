@@ -1,4 +1,14 @@
-# NexusML
+<p align="center">
+  <img src="assets/logo.svg" alt="Logo" height="200">
+</p>
+
+<p align="center">
+  <a href="https://github.com/neuraptic/nexusml/actions/workflows/format-and-lint.yml">
+    <img src="https://github.com/neuraptic/nexusml/actions/workflows/format-and-lint.yml/badge.svg" alt="Code Formatting & Linting">
+  </a>
+</p>
+
+<br>
 
 <!-- toc -->
 
