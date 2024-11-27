@@ -454,10 +454,9 @@ class EngineWorker(abc.ABC):
             total_time = time.time() - training_end_time
 
             # Update task usage
-            self.update_task_usage(
-                cpu_hours=total_time,
-                gpu_hours=(training_end_time - training_start_time) if training_device == 'gpu' else 0
-            )
+            self.update_task_usage(cpu_hours=total_time,
+                                   gpu_hours=(training_end_time -
+                                              training_start_time) if training_device == 'gpu' else 0)
 
             # Set task status as active
             self.update_task_status(code=TASK_ACTIVE_STATUS_CODE)

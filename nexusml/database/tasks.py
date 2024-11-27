@@ -1,4 +1,4 @@
-from typing import List, Tuple, Union
+from typing import Tuple, Union
 
 from sqlalchemy import Boolean
 from sqlalchemy import Column
@@ -16,7 +16,6 @@ from sqlalchemy.dialects.mysql import INTEGER
 from sqlalchemy.dialects.mysql import MEDIUMINT
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import relationship
-from sqlalchemy.orm import Session
 
 from nexusml.constants import AL_SERVICE_NAME
 from nexusml.constants import CL_SERVICE_NAME

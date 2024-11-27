@@ -20,9 +20,7 @@ class TestAPIConfig:
         endpoint_url = get_endpoint(parameterized_endpoint=ENDPOINT_SYS_CONFIG)
         response = custom_client.send_request(method='GET', url=endpoint_url)
         assert response.status_code == HTTP_GET_STATUS_CODE
-        assert response.json() == {
-            'auth_enabled': TEST_CONFIG['general']['auth_enabled']
-        }
+        assert response.json() == {'auth_enabled': TEST_CONFIG['general']['auth_enabled']}
 
     def test_invalid_request(self):
         endpoint_url = get_endpoint(parameterized_endpoint=ENDPOINT_SYS_CONFIG)

@@ -134,46 +134,27 @@ def create_app(setup_database: bool = True):
 
 def _check_env_variables():
     required_env_vars = [
-        ENV_API_DOMAIN,
-        ENV_RSA_KEY_FILE,
-        ENV_WEB_CLIENT_ID,
-        ENV_MAIL_SERVER,
-        ENV_MAIL_USERNAME,
-        ENV_MAIL_PASSWORD,
-        ENV_NOTIFICATION_EMAIL,
-        ENV_WAITLIST_EMAIL,
-        ENV_SUPPORT_EMAIL,
-        ENV_DB_NAME,
-        ENV_DB_USER,
-        ENV_DB_PASSWORD
+        ENV_API_DOMAIN, ENV_RSA_KEY_FILE, ENV_WEB_CLIENT_ID, ENV_MAIL_SERVER, ENV_MAIL_USERNAME, ENV_MAIL_PASSWORD,
+        ENV_NOTIFICATION_EMAIL, ENV_WAITLIST_EMAIL, ENV_SUPPORT_EMAIL, ENV_DB_NAME, ENV_DB_USER, ENV_DB_PASSWORD
     ]
 
     optional_env_vars = [
-        ENV_CELERY_BROKER_URL,
-        ENV_CELERY_RESULT_BACKEND,
-        ENV_AUTH0_DOMAIN,
-        ENV_AUTH0_CLIENT_ID,
-        ENV_AUTH0_CLIENT_SECRET,
-        ENV_AUTH0_JWKS,
-        ENV_AUTH0_SIGN_UP_REDIRECT_URL,
-        ENV_AUTH0_TOKEN_AUDIENCE,
-        ENV_AUTH0_TOKEN_ISSUER,
-        ENV_AWS_ACCESS_KEY_ID,
-        ENV_AWS_SECRET_ACCESS_KEY,
-        ENV_AWS_S3_BUCKET
+        ENV_CELERY_BROKER_URL, ENV_CELERY_RESULT_BACKEND, ENV_AUTH0_DOMAIN, ENV_AUTH0_CLIENT_ID,
+        ENV_AUTH0_CLIENT_SECRET, ENV_AUTH0_JWKS, ENV_AUTH0_SIGN_UP_REDIRECT_URL, ENV_AUTH0_TOKEN_AUDIENCE,
+        ENV_AUTH0_TOKEN_ISSUER, ENV_AWS_ACCESS_KEY_ID, ENV_AWS_SECRET_ACCESS_KEY, ENV_AWS_S3_BUCKET
     ]
 
     missing_required_vars = [f'"{var}"' for var in required_env_vars if var not in os.environ]
     if missing_required_vars:
-        print('ERROR: The following required environment variables have not been set: '
-              + ', '.join(missing_required_vars))
+        print('ERROR: The following required environment variables have not been set: ' +
+              ', '.join(missing_required_vars))
         print('Exiting')
         sys.exit(1)
 
     missing_optional_vars = [f'"{var}"' for var in optional_env_vars if var not in os.environ]
     if missing_optional_vars:
-        warnings.warn('The following optional environment variables have not been set: '
-                      + ', '.join(missing_optional_vars))
+        warnings.warn('The following optional environment variables have not been set: ' +
+                      ', '.join(missing_optional_vars))
 
 
 def _set_app_config(app):

@@ -119,12 +119,8 @@ def get_endpoint(parameterized_endpoint: str,
     return (API_DOMAIN + api_url + endpoint) if absolute_url else endpoint
 
 
-def verify_endpoints_protection(client: MockClient,
-                                endpoint: str,
-                                view: MethodResource,
-                                mock_client_id: str,
-                                session_user_id: str,
-                                session_user_auth0_id: str):
+def verify_endpoints_protection(client: MockClient, endpoint: str, view: MethodResource, mock_client_id: str,
+                                session_user_id: str, session_user_auth0_id: str):
     """ Class decorator for verifying all endpoints' access protection before making the corresponding requests. """
 
     # TODO: this decorator makes tests extremely slow and doesn't scale at all

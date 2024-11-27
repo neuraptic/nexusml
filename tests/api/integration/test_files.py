@@ -910,14 +910,13 @@ class TestMultipartUploadView:
 
     # @pytest.mark.parametrize('storage_backend', [FileStorageBackend.LOCAL, FileStorageBackend.S3])
     def test_multipart_upload(
-        self,
-        mock_s3,
-        client: MockClient,
-        # storage_backend: FileStorageBackend,
-        mock_client_id: str,
-        session_user_id: str,
-        session_user_auth0_id: str
-    ):
+            self,
+            mock_s3,
+            client: MockClient,
+            # storage_backend: FileStorageBackend,
+            mock_client_id: str,
+            session_user_id: str,
+            session_user_auth0_id: str):
         storage_backend = FileStorageBackend.S3  # TODO: Remove this line when the local storage backend tests are fixed
         if storage_backend == FileStorageBackend.LOCAL:
             client._always_use_test_client = True

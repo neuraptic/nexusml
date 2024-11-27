@@ -117,7 +117,6 @@ _RoleView = create_view(resource_types=[Organization, Role])
 _CollaboratorView = create_view(resource_types=[Organization, Collaborator])
 _ClientView = create_view(resource_types=[Organization, Client])
 
-
 #################
 # Organizations #
 #################

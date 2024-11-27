@@ -92,11 +92,7 @@ _CLIENT_ID = NUM_RESERVED_CLIENTS + 2  # First client IDs are reserved for offic
 
 class TestOrganizations:
 
-    def test_post(self,
-                  mock_request_responses,
-                  client: MockClient,
-                  mock_client_id: str,
-                  session_user_id: str,
+    def test_post(self, mock_request_responses, client: MockClient, mock_client_id: str, session_user_id: str,
                   session_user_auth0_id: str):
         #################
         # Valid request #
@@ -261,11 +257,7 @@ class TestOrganization:
                                        expected_jsons=expected_jsons,
                                        expected_status_code=expected_status_code)
 
-    def test_delete(self,
-                    client: MockClient,
-                    mock_s3,
-                    mock_client_id: str,
-                    session_user_id: str,
+    def test_delete(self, client: MockClient, mock_s3, mock_client_id: str, session_user_id: str,
                     session_user_auth0_id: str):
         """
         Valid request
@@ -287,11 +279,7 @@ class TestOrganization:
     def test_get(self, client: MockClient, mock_s3):
         self._test_org_method(client=client, method='GET')
 
-    def test_put(self,
-                 client: MockClient,
-                 mock_s3,
-                 mock_client_id: str,
-                 session_user_id: str,
+    def test_put(self, client: MockClient, mock_s3, mock_client_id: str, session_user_id: str,
                  session_user_auth0_id: str):
         #################
         # Valid request #

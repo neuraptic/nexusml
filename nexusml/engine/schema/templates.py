@@ -139,20 +139,17 @@ def get_tabular_classification_regression_schema_template(inputs: Tuple[str] = (
 
 
 def get_multimodal_classification_regression_schema_template(task_type: TaskType) -> dict:
-    input = [
-        {
-            "name": "image",
-            "type": "image_file",
-            "nullable": False,
-            "required": True
-        },
-        {
-            "name": "text",
-            "type": "text",
-            "nullable": False,
-            "required": True
-        }
-    ]
+    input = [{
+        'name': 'image',
+        'type': 'image_file',
+        'nullable': False,
+        'required': True
+    }, {
+        'name': 'text',
+        'type': 'text',
+        'nullable': False,
+        'required': True
+    }]
     if task_type == TaskType.CLASSIFICATION:
         outputs = [{'name': 'class', 'type': 'category', 'nullable': False, 'required': True}]
     else:

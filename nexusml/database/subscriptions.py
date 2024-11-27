@@ -16,7 +16,6 @@ from sqlalchemy.dialects.mysql import INTEGER
 from sqlalchemy.dialects.mysql import MEDIUMINT
 from sqlalchemy.dialects.mysql import SMALLINT
 from sqlalchemy.dialects.mysql import TINYINT
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import relationship
 
 from nexusml.api.utils import config
@@ -28,8 +27,6 @@ from nexusml.constants import MYSQL_MEDIUMINT_MAX_UNSIGNED
 from nexusml.constants import MYSQL_SMALLINT_MAX_UNSIGNED
 from nexusml.database.base import DBModel
 from nexusml.database.core import db_query
-from nexusml.database.core import db_rollback
-from nexusml.database.core import save_to_db
 from nexusml.database.organizations import ClientDB
 from nexusml.database.organizations import ImmutableEntity
 from nexusml.database.organizations import OrganizationDB
@@ -513,23 +510,24 @@ def create_default_plans():
         IntegrityError: If an integrity error other than a unique constraint violation occurs.
     """
     # Create the Default Plan with no quota limits
-    default_plan = Plan(plan_id=DEFAULT_PLAN_ID,
-                        name='Default Plan',
-                        description='Default plan with no quota limits',
-                        price=0,
-                        currency=Currency.DOLLAR,
-                        billing_cycle=BillingCycle.MONTHLY,
-                        max_tasks=MYSQL_SMALLINT_MAX_UNSIGNED,
-                        max_deployments=MYSQL_MEDIUMINT_MAX_UNSIGNED,
-                        max_predictions=MYSQL_INT_MAX_UNSIGNED,
-                        max_gpu_hours=99999.99,  # DECIMAL(precision=7, scale=2)
-                        max_cpu_hours=99999.99,  # DECIMAL(precision=7, scale=2)
-                        max_examples=MYSQL_INT_MAX_UNSIGNED,
-                        space_limit=MYSQL_BIGINT_MAX_UNSIGNED,
-                        max_users=MYSQL_SMALLINT_MAX_UNSIGNED,
-                        max_roles=MYSQL_SMALLINT_MAX_UNSIGNED,
-                        max_collaborators=MYSQL_SMALLINT_MAX_UNSIGNED,
-                        max_clients=MYSQL_SMALLINT_MAX_UNSIGNED)
+    default_plan = Plan(
+        plan_id=DEFAULT_PLAN_ID,
+        name='Default Plan',
+        description='Default plan with no quota limits',
+        price=0,
+        currency=Currency.DOLLAR,
+        billing_cycle=BillingCycle.MONTHLY,
+        max_tasks=MYSQL_SMALLINT_MAX_UNSIGNED,
+        max_deployments=MYSQL_MEDIUMINT_MAX_UNSIGNED,
+        max_predictions=MYSQL_INT_MAX_UNSIGNED,
+        max_gpu_hours=99999.99,  # DECIMAL(precision=7, scale=2)
+        max_cpu_hours=99999.99,  # DECIMAL(precision=7, scale=2)
+        max_examples=MYSQL_INT_MAX_UNSIGNED,
+        space_limit=MYSQL_BIGINT_MAX_UNSIGNED,
+        max_users=MYSQL_SMALLINT_MAX_UNSIGNED,
+        max_roles=MYSQL_SMALLINT_MAX_UNSIGNED,
+        max_collaborators=MYSQL_SMALLINT_MAX_UNSIGNED,
+        max_clients=MYSQL_SMALLINT_MAX_UNSIGNED)
 
     save_or_ignore_duplicate(default_plan)
 

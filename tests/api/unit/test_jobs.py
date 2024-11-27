@@ -445,9 +445,7 @@ class TestRunMonService:
         mon_service_instance.update_service_status.assert_not_called()
         mon_service_instance.detect_ood_predictions.assert_not_called()
 
-    def test_run_mon_service_status_not_waiting(self,
-                                                mocker,
-                                                mock_monitoring_service,
+    def test_run_mon_service_status_not_waiting(self, mocker, mock_monitoring_service,
                                                 mock_service_filter_by_task_and_type):
         """Test `run_mon_service` when the service status is not in a waiting state.
 

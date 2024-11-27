@@ -147,10 +147,7 @@ class TestResourceID:
         ]
 
     @staticmethod
-    def _verify_method(client: MockClient,
-                       method: str,
-                       mock_client_id: str,
-                       session_user_id: str,
+    def _verify_method(client: MockClient, method: str, mock_client_id: str, session_user_id: str,
                        session_user_auth0_id: str):
 
         def _verify_resource_url(resource_info: dict, use_uuids: bool):
@@ -199,11 +196,7 @@ class TestResourceID:
             _verify_resource_url(resource_info, use_uuids=False)
             pass  # TODO: access the resource using a unique identifier (e.g. element name, category name, tag, etc.)
 
-    def test_delete(self,
-                    client: MockClient,
-                    mock_s3,
-                    mock_client_id: str,
-                    session_user_id: str,
+    def test_delete(self, client: MockClient, mock_s3, mock_client_id: str, session_user_id: str,
                     session_user_auth0_id: str):
         self._verify_method(client=client,
                             method='DELETE',
@@ -211,11 +204,7 @@ class TestResourceID:
                             session_user_id=session_user_id,
                             session_user_auth0_id=session_user_auth0_id)
 
-    def test_get(self,
-                 client: MockClient,
-                 mock_s3,
-                 mock_client_id: str,
-                 session_user_id: str,
+    def test_get(self, client: MockClient, mock_s3, mock_client_id: str, session_user_id: str,
                  session_user_auth0_id: str):
         self._verify_method(client=client,
                             method='GET',
@@ -223,11 +212,7 @@ class TestResourceID:
                             session_user_id=session_user_id,
                             session_user_auth0_id=session_user_auth0_id)
 
-    def test_put(self,
-                 client: MockClient,
-                 mock_s3,
-                 mock_client_id: str,
-                 session_user_id: str,
+    def test_put(self, client: MockClient, mock_s3, mock_client_id: str, session_user_id: str,
                  session_user_auth0_id: str):
         self._verify_method(client=client,
                             method='PUT',

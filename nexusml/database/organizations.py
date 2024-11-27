@@ -19,7 +19,6 @@ from sqlalchemy import UniqueConstraint
 from sqlalchemy.dialects.mysql import DATETIME
 from sqlalchemy.dialects.mysql import INTEGER
 from sqlalchemy.dialects.mysql import MEDIUMINT
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.ext.mutable import MutableList
 from sqlalchemy.orm import relationship
@@ -176,7 +175,6 @@ user_roles = Table('user_roles',
                           nullable=False),
                    mysql_engine='InnoDB')
 
-
 ###########
 # Clients #
 ###########
@@ -284,7 +282,6 @@ client_scopes = sorted([
     'predictions.read',
     'predictions.delete'
 ])
-
 
 ##############################################
 # Entities created/modified by users/clients #
@@ -447,11 +444,7 @@ class WaitList(DBModel):
 def create_default_organization():
     default_org = OrganizationDB.get(organization_id=1)
     if default_org is None:
-        default_org = OrganizationDB(organization_id=1,
-                                     trn='',
-                                     name='NexusML',
-                                     domain='',
-                                     address='')
+        default_org = OrganizationDB(organization_id=1, trn='', name='NexusML', domain='', address='')
         save_to_db(default_org)
 
 

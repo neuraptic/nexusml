@@ -580,13 +580,8 @@ class TestPredictionLogs:
 class TestPredictionLog:
 
     @pytest.mark.parametrize('file_storage_backend', [FileStorageBackend.LOCAL, FileStorageBackend.S3])
-    def test_delete(self,
-                    client: MockClient,
-                    mock_s3,
-                    file_storage_backend: FileStorageBackend,
-                    mock_client_id: str,
-                    session_user_id: str,
-                    session_user_auth0_id: str):
+    def test_delete(self, client: MockClient, mock_s3, file_storage_backend: FileStorageBackend, mock_client_id: str,
+                    session_user_id: str, session_user_auth0_id: str):
         # Valid request (testing prediction)
         verify_example_or_prediction_deletion(client=client,
                                               resource_type=PredictionLog,
@@ -628,11 +623,7 @@ class TestPredictionLog:
 
 class TestPredictionLogging:
 
-    def test_post(self,
-                  backend: Backend,
-                  client: MockClient,
-                  mock_client_id: str,
-                  session_user_id: str,
+    def test_post(self, backend: Backend, client: MockClient, mock_client_id: str, session_user_id: str,
                   session_user_auth0_id: str):
         """
         Since prediction logging is asynchronous (Celery task), we cannot check responses as we do for examples.
