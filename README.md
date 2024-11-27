@@ -7,6 +7,8 @@
 - [Multi-Tenancy and Subscriptions](#multi-tenancy-and-subscriptions)
 - [Pending Refactor Note](#pending-refactor-note)
 - [Additional Documentation](#additional-documentation)
+- [Maintainers](#maintainers)
+- [Acknowledgments](#acknowledgments)
 
 ## Introduction
 
@@ -55,3 +57,20 @@ The [docs](docs) directory contains additional documentation:
 - [quickstart.md](docs/quickstart.md): Provides a quick start guide for NexusML.
 - [states-and-statuses.md](docs/states-and-statuses.md): Describes NexusML's states and statuses.
 - [what-is-nexusml.md](docs/what-is-nexusml.md): Provides an overview of NexusML.
+
+## Maintainers
+
+NexusML is maintained by the following individuals (in alphabetical order):
+
+- Mikel Elkano Ilintxeta ([@melkilin](https://github.com/melkilin))
+- Mikel Uriz Martin ([@MikelUriz](https://github.com/MikelUriz))
+
+## Acknowledgments
+
+We would like to recognize the valuable contributions of the following individuals (in alphabetical order):
+
+- Enrique Hernández Calabrés ([@ehcalabres](https://github.com/ehcalabres))
+- Leyre Ayllón Lafuente ([@layllon](https://github.com/layllon))
+- Marco D'Alessandro ([@IoSonoMarco](https://github.com/IoSonoMarco))
+- Miguel Ángel Álvarez Fernández ([@MigangalWork](https://github.com/MigangalWork))
+- Miguel Pérez Martínez ([@MiguelPerezMartinez](https://github.com/MiguelPerezMartinez))
