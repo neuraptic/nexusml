@@ -1,0 +1,38 @@
+boto3
+catboost
+datasets
+# TODO: Ensure `Detectron2` is listed last in the installation sequence, as it depends on PyTorch being installed first.
+detectron2  # git+https://github.com/facebookresearch/detectron2.git
+jiwer
+lightgbm
+matplotlib
+mlflow
+moto[s3,server] >= 1.3.17.dev248  # previous versions don't replace `${filename}` in pre-signed POST requests:
+                                  # - https://github.com/spulec/moto/issues/3667)
+nltk
+numpy
+opencv-python
+pandas
+pillow
+protobuf
+psutil
+pycocotools
+pysoundfile
+pyyaml
+requests
+scikit-learn
+sentencepiece
+setuptools
+sqlalchemy < 2.0
+timm
+tokenizers
+torch
+torchaudio
+torchsummary
+torchvision
+torch_cluster
+torch_geometric
+tqdm
+transformers
+unidecode
+xgboost

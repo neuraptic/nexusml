@@ -1,0 +1,132 @@
+<html>
+
+    <head>
+        <meta charset="UTF-8">
+        <title>{{ app_name }} - Notifications</title>
+        <meta name="description" content="{{ app_name }} - Notifications">
+    </head>
+
+    <body>
+
+        <style>
+            body{
+                color: #202124;
+                font-family: "Open Sans", roboto, sans-serif;
+                font-size: 16px;
+            }
+            svg {
+                display: block;
+                width: 100%;
+                height: 100%;
+            }
+            #logo-container {
+                height: 128px;
+            }
+            #title-container{
+                margin-top: 40px;
+                font-weight: bold;
+                text-align: center;
+            }
+            #notifications-container{
+                position: relative;
+                margin: auto;
+                margin-top: 40px;
+                max-width: 50%;
+                border-radius: 0.35em;
+                box-shadow: 0 3px 10px 0 rgba(0, 0, 0, 0.2);
+                padding: 40px;
+            }
+        </style>
+
+        <div id="logo-container">
+            <img src="https://raw.githubusercontent.com/neuraptic/nexusml/main/assets/logo.png" alt="{{ app_name }}" style="width: 324px; height: 128px; display: block; margin: auto;">
+        </div>
+
+        <div id="title-container">
+            Hi {{ first_name }}! You have unread notifications
+        </div>
+
+        <div id="notifications-container">
+
+            {% set n_tasks_updated = updated_tasks|length %}
+            {% if n_tasks_updated > 0 %}
+                <b>Updated Tasks ({{ n_tasks_updated }})</b>
+                <ul>
+                    {% for task in updated_tasks -%}
+                        <li>{{ task.name }}&emsp;({{ task.modified_at }})</li>
+                    {%- endfor %}
+                </ul>
+            {% elif task_updates_count > 0 %}
+                <b>Task Updates ({{ task_updates_count }})</b>
+            {% endif %}
+
+            {% set n_released_models = released_models|length %}
+            {% if n_released_models > 0 %}
+                <b>Released AI Models ({{ n_released_models }})</b>
+                <ul>
+                    {% for model in released_models -%}
+                        <li>{{ model.name }}&emsp;({{ model.created_at }})</li>
+                    {%- endfor %}
+                </ul>
+            {% elif model_releases_count > 0 %}
+                <b>AI Model Releases ({{ model_releases_count }})</b>
+            {% endif %}
+        
+            {% set n_example_comments = example_comments|length %}
+            {% if n_example_comments > 0 %}
+                <b>Example Comments ({{ n_example_comments }})</b>
+            {% endif %}
+                <ul>
+                    {% for example_id, comment in example_comments -%}
+                        <li>{{ example_id }}: <i>"{{ comment.message }}"</i>&emsp;({{ comment.created_at }})</li>
+                    {%- endfor %}
+                </ul>
+            {% if example_comments_count > 0 %}
+                <b>Example Comments ({{ example_comments_count }})</b>
+            {% endif %}
+
+            {% set n_examples_updated = example_updates|length %}
+            {% if n_examples_updated > 0 %}
+                <b>Updated Examples ({{ n_examples_updated }})</b>
+                <ul>
+                    {% for example in example_updates -%}
+                        <li>{{ example.uuid }}&emsp;({{ example.modified_at }})</li>
+                    {%- endfor %}
+                </ul>
+            {% elif example_updates_count > 0 %}
+                <b>Example Updates ({{ example_updates_count }})</b>
+            {% endif %}
+
+            {% set n_examples_deleted = example_deletions|length %}
+            {% if n_examples_deleted > 0 %}
+                <b>Deleted Examples ({{ n_examples_deleted }})</b>
+                <ul>
+                    {% for notification in example_deletions -%}
+                        <li>{{ notification.source_uuid }}&emsp;({{ notification.created_at }})</li>
+                    {%- endfor %}
+                </ul>
+            {% elif example_deletions_count > 0 %}
+                <b>Deleted Examples ({{ example_deletions_count }})</b>
+            {% endif %}
+
+            {% set n_examples_created = example_creations|length %}
+            {% if n_examples_created > 0 %}
+                <b>Created Examples ({{ n_examples_created }})</b>
+                <ul>
+                    {% if n_examples_created > 50 %}
+                        <li>{{ n_examples_created }} examples created</li>
+                    {% else %}
+                        {% for example in example_creations -%}
+                            <li>{{ example.uuid }}&emsp;({{ example.created_at }})</li>
+                        {%- endfor %}
+                    {% endif %}
+                </ul>
+            {% elif example_creations_count > 0 %}
+                <b>Created Examples ({{ example_creations_count }})</b>
+            {% endif %}
+
+        </div>
+
+    </body>
+
+</html>
