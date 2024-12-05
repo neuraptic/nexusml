@@ -1,0 +1,39 @@
+name: PyPI Publication
+
+on:
+  push:
+    tags:
+      - 'v*'  # Triggers the workflow on version tags like v1.0.0
+
+jobs:
+  build-and-publish:
+    name: Publish release to PyPI
+    runs-on: ubuntu-latest
+    environment: PyPI  # Optional but encouraged for better security control
+    permissions:
+      id-token: write  # Mandatory for Trusted Publishing
+    steps:
+      # Step 1: Checkout the repository
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Step 2: Set up Python
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      # Step 3: Install the dependencies
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install build setuptools
+
+      # Step 4: Build the package
+      - name: Build package
+        run: |
+          python -m build
+
+      # Step 5: Publish the package using PyPA action
+      - name: Publish package to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
