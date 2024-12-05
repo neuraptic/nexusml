@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=62.6.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nexusml"
+version = "0.1.0-beta.0"
+description = "A multimodal AutoML platform for classification and regression tasks"
+readme = "README.md"
+authors = [
+    { name = "Neuraptic AI", email = "support@neuraptic.ai" }
+]
+requires-python = ">=3.10"
+license = {text = "MIT"}
+keywords = ["automl", "multimodal", "classification", "regression"]
+classifiers = [
+    "Programming Language :: Python :: 3.10",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent"
+]
+dynamic = ["dependencies"]
+
+[project.urls]
+Homepage = "https://github.com/neuraptic/nexusml"
+
+[project.scripts]
+nexusml-server = "nexusml.cli:run_server"
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements/engine-requirements.txt", "requirements/api-requirements.txt"]}
+
+[tool.setuptools.packages.find]
+include = ["nexusml*"]
+
+[tool.setuptools.package-data]
+"nexusml" = [
+    "api/templates/email_notifications.html",
+    "api/templates/service_notifications.html",
+    "api/templates/user_invitation.html",
+    "api/templates/waitlist_notification.html"
+]

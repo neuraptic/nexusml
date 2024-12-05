@@ -1,10 +1,13 @@
 <p align="center">
-  <img src="assets/logo.svg" alt="Logo" height="200">
+  <img src="https://raw.githubusercontent.com/neuraptic/nexusml/main/assets/logo.svg" alt="Logo" height="200">
 </p>
 
 <p align="center">
   <a href="https://github.com/neuraptic/nexusml/actions/workflows/format-and-lint.yml">
     <img src="https://github.com/neuraptic/nexusml/actions/workflows/format-and-lint.yml/badge.svg" alt="Code Formatting & Linting">
+  </a>
+  <a href="https://github.com/neuraptic/nexusml/actions/workflows/publish-to-pypi.yml">
+    <img src="https://github.com/neuraptic/nexusml/actions/workflows/publish-to-pypi.yml/badge.svg" alt="PyPI Publication">
   </a>
 </p>
 
@@ -14,6 +17,7 @@
 
 - [Introduction](#introduction)
 - [Requirements](#requirements)
+- [Installation](#installation)
 - [Multi-Tenancy and Subscriptions](#multi-tenancy-and-subscriptions)
 - [Pending Refactor Note](#pending-refactor-note)
 - [Additional Documentation](#additional-documentation)
@@ -24,14 +28,23 @@
 
 NexusML is a multimodal AutoML platform for classification and regression tasks.
 
-Please refer to [docs/what-is-nexusml.md](docs/what-is-nexusml.md) and [docs/concepts.md](docs/concepts.md) for an 
-overview of NexusML and its key features.
+Please refer to [docs/what-is-nexusml.md](https://github.com/neuraptic/nexusml/blob/main/docs/what-is-nexusml.md) 
+and [docs/concepts.md](https://github.com/neuraptic/nexusml/blob/main/docs/concepts.md) for an overview of NexusML 
+and its key features.
 
 ## Requirements
 
 - Python 3.10
 - [Auth0](https://auth0.com/) configuration for user authentication
 - [AWS S3](https://aws.amazon.com/s3/) configuration if you want to use S3 as the file storage backend
+
+## Installation
+
+You can install NexusML with pip:
+
+```bash
+pip install nexusml
+```
 
 ## Multi-Tenancy and Subscriptions
 
@@ -40,7 +53,8 @@ independently within isolated workspaces. Each tenant has its own environment, w
 collaborate on tasks, manage data, and deploy AI models without affecting other tenants.
 
 > ℹ️ Multi-tenancy requires [Auth0](https://auth0.com/) for user authentication. Please refer to 
-> [docs/auth0.md](docs/auth0.md) for instructions on setting up Auth0 for NexusML.
+> [docs/auth0.md](https://github.com/neuraptic/nexusml/blob/main/docs/auth0.md) for instructions on setting up Auth0 
+> for NexusML.
 
 NexusML allows you to create and customize subscription plans, adjusting quota limits (such as storage and compute 
 resources) to meet the specific needs of different organizations.
@@ -59,14 +73,20 @@ will streamline and simplify the integration between the engine and the main API
 
 ## Additional Documentation
 
-The [docs](docs) directory contains additional documentation:
+The [docs](https://github.com/neuraptic/nexusml/blob/main/docs) directory contains additional documentation:
 
-- [architecture.md](docs/architecture.md): Describes the architecture of NexusML.
-- [auth0.md](docs/auth0.md): Describes the Auth0 configuration for NexusML.
-- [concepts.md](docs/concepts.md): Describes the concepts used in NexusML.
-- [quickstart.md](docs/quickstart.md): Provides a quick start guide for NexusML.
-- [states-and-statuses.md](docs/states-and-statuses.md): Describes NexusML's states and statuses.
-- [what-is-nexusml.md](docs/what-is-nexusml.md): Provides an overview of NexusML.
+- [architecture.md](https://github.com/neuraptic/nexusml/blob/main/docs/architecture.md): Describes the architecture 
+  of NexusML.
+- [auth0.md](https://github.com/neuraptic/nexusml/blob/main/docs/auth0.md): Describes the Auth0 configuration for 
+  NexusML.
+- [concepts.md](https://github.com/neuraptic/nexusml/blob/main/docs/concepts.md): Describes the concepts used in 
+  NexusML.
+- [quickstart.md](https://github.com/neuraptic/nexusml/blob/main/docs/quickstart.md): Provides a quick start guide for 
+  NexusML.
+- [states-and-statuses.md](https://github.com/neuraptic/nexusml/blob/main/docs/states-and-statuses.md): Describes 
+  NexusML's states and statuses.
+- [what-is-nexusml.md](https://github.com/neuraptic/nexusml/blob/main/docs/what-is-nexusml.md): Provides an overview 
+  of NexusML.
 
 ## Maintainers
 
