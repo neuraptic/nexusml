@@ -14,7 +14,7 @@ from sqlalchemy.exc import InvalidRequestError
 from sqlalchemy.exc import StatementError
 from sqlalchemy.inspection import inspect
 
-from nexusml.api.ext import cache
+from nexusml.api.external.ext import cache
 from nexusml.api.schemas.base import ResourceRequestSchema
 from nexusml.api.schemas.base import ResourceResponseSchema
 from nexusml.api.utils import API_DOMAIN

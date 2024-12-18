@@ -17,12 +17,12 @@ import yaml
 
 from nexusml.api import routes
 from nexusml.api.endpoints import ENDPOINT_SYS_CONFIG
-from nexusml.api.ext import cache
-from nexusml.api.ext import celery
-from nexusml.api.ext import cors
-from nexusml.api.ext import docs
-from nexusml.api.ext import init_celery
-from nexusml.api.ext import mail
+from nexusml.api.external.ext import cache
+from nexusml.api.external.ext import celery
+from nexusml.api.external.ext import cors
+from nexusml.api.external.ext import docs
+from nexusml.api.external.ext import init_celery
+from nexusml.api.external.ext import mail
 from nexusml.api.utils import config
 from nexusml.api.utils import decode_api_key
 from nexusml.api.utils import DEFAULT_CONFIG

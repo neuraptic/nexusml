@@ -14,7 +14,7 @@ from flask_mail import Message
 from marshmallow import ValidationError
 from sqlalchemy import and_ as sql_and
 
-from nexusml.api.ext import mail
+from nexusml.api.external.ext import mail
 from nexusml.api.resources.base import Resource
 from nexusml.api.resources.organizations import User
 from nexusml.api.resources.tasks import Task

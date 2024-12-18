@@ -24,7 +24,7 @@ from nexusml.api.endpoints import ENDPOINT_USER_INVITE
 from nexusml.api.endpoints import ENDPOINT_USER_PERMISSIONS
 from nexusml.api.endpoints import ENDPOINT_USER_ROLES
 from nexusml.api.endpoints import ENDPOINT_USERS
-from nexusml.api.ext import cache
+from nexusml.api.external.ext import cache
 from nexusml.api.resources import ResourceNotFoundError
 from nexusml.api.resources.organizations import Client
 from nexusml.api.resources.organizations import Collaborator

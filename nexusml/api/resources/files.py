@@ -7,7 +7,7 @@ from flask import url_for
 
 from nexusml.api.endpoints import ENDPOINT_ORG_FILE
 from nexusml.api.endpoints import ENDPOINT_TASK_FILE
-from nexusml.api.ext import cache
+from nexusml.api.external.ext import cache
 from nexusml.api.resources.base import PermissionDeniedError
 from nexusml.api.resources.base import QuotaError
 from nexusml.api.resources.base import Resource

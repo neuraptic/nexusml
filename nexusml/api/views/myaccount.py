@@ -9,6 +9,7 @@ from flask_apispec import use_kwargs
 import jwt
 from marshmallow import fields
 
+from nexusml.api.external.auth0 import Auth0Manager
 from nexusml.api.resources.base import collaborators_permissions
 from nexusml.api.resources.base import dump
 from nexusml.api.resources.base import ResourceNotFoundError
@@ -28,8 +29,6 @@ from nexusml.api.schemas.organizations import OrganizationPermissionsPage
 from nexusml.api.schemas.organizations import OrganizationResponseSchema
 from nexusml.api.schemas.organizations import UserResponseSchema
 from nexusml.api.schemas.organizations import UserUpdateSchema
-from nexusml.api.utils import get_auth0_management_api_token
-from nexusml.api.utils import get_auth0_user_data
 from nexusml.api.views.base import create_view
 from nexusml.api.views.common import paginated_response
 from nexusml.api.views.common import permissions_jsons
@@ -84,9 +83,8 @@ class MyAccountView(_MyAccountView):
         try:
             user_db_object: UserDB = agent_from_token()
         except jwt.InvalidTokenError as token_error:
-            mgmt_api_access_token = get_auth0_management_api_token()
-            auth0_user_data: dict = get_auth0_user_data(access_token=mgmt_api_access_token,
-                                                        auth0_id_or_email=g.user_auth0_id)
+            auth0_manager: Auth0Manager = Auth0Manager()
+            auth0_user_data: dict = auth0_manager.get_auth0_user_data(auth0_id_or_email=g.user_auth0_id)
             user_invitation: InvitationDB = self._get_user_invitation(token_error=token_error,
                                                                       email=auth0_user_data['email'])
             new_user: User = self._create_new_user_from_invitation(user_invitation=user_invitation,

@@ -44,7 +44,7 @@ from nexusml.api.endpoints import ENDPOINT_TASK_FILES
 from nexusml.api.endpoints import ENDPOINT_TASK_LOCAL_FILE_STORE_DOWNLOAD
 from nexusml.api.endpoints import ENDPOINT_TASK_LOCAL_FILE_STORE_MULTIPART_UPLOAD
 from nexusml.api.endpoints import ENDPOINT_TASK_LOCAL_FILE_STORE_UPLOAD
-from nexusml.api.ext import cache
+from nexusml.api.external.ext import cache
 from nexusml.api.resources.files import OrgFile
 from nexusml.api.resources.files import TaskFile
 from nexusml.api.resources.organizations import Organization
@@ -121,12 +121,12 @@ def _local_storage_backend(monkeypatch, create_root_path: bool = False) -> Flask
     monkeypatch.setattr('nexusml.api.utils.config', config)
     monkeypatch.setattr('nexusml.api.config', config)
 
-    # Monkeypatch `nexusml.api.ext.docs`.
+    # Monkeypatch `nexusml.api.external.ext.docs`.
     # TODO: Is this a sign of a bad design?
     # Note: We also monkeypatch the imported copies used by the following functions:
     #       - `nexusml.api.create_app()`
     docs = FlaskApiSpec()
-    monkeypatch.setattr('nexusml.api.ext.docs', docs)
+    monkeypatch.setattr('nexusml.api.external.ext.docs', docs)
     monkeypatch.setattr('nexusml.api.docs', docs)
 
     # Monkeypatch the `nexusml.api.utils.get_file_storage_backend()` function to ensure it uses the patched config.

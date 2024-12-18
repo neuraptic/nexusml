@@ -7,7 +7,6 @@ import re
 import sys
 import tempfile
 from typing import Any, IO, Optional, Union
-import urllib.parse
 from urllib.parse import unquote_plus
 import uuid
 
@@ -19,9 +18,6 @@ from flask import Flask
 import jwt
 from PIL import Image
 from platformdirs import user_data_dir
-import requests
-from requests import Response
-from werkzeug.exceptions import BadRequest
 
 from nexusml.constants import API_NAME
 from nexusml.constants import API_VERSION
@@ -30,9 +26,6 @@ from nexusml.constants import THUMBNAIL_SIZE
 from nexusml.enums import EngineType
 from nexusml.enums import FileStorageBackend
 from nexusml.env import ENV_API_DOMAIN
-from nexusml.env import ENV_AUTH0_CLIENT_ID
-from nexusml.env import ENV_AUTH0_CLIENT_SECRET
-from nexusml.env import ENV_AUTH0_DOMAIN
 from nexusml.env import ENV_AUTH0_JWKS
 from nexusml.env import ENV_AUTH0_TOKEN_AUDIENCE
 from nexusml.env import ENV_AUTH0_TOKEN_ISSUER
@@ -491,103 +484,6 @@ def decode_api_key(api_key: str, verify: bool = True) -> dict:
         dict: The decoded API key claims.
     """
     return _decode_jwt(token=api_key, public_key=config.rsa_public_key(), verify=verify, issuer=API_NAME)
-
-
-#############
-# Auth0 API #
-#############
-
-
-def get_auth0_management_api_token() -> str:
-    """
-    Retrieves the Auth0 Management API token required for accessing the Auth0 database.
-
-    This function sends a POST request to the Auth0 token endpoint with the necessary credentials,
-    including client ID, client secret, and audience. The returned access token is used for making
-    further Auth0 Management API calls.
-
-    Returns:
-        str: The Auth0 Management API access token.
-    """
-    access_token: str
-    payload: dict = {
-        'grant_type': 'client_credentials',
-        'client_id': os.environ[ENV_AUTH0_CLIENT_ID],
-        'client_secret': os.environ[ENV_AUTH0_CLIENT_SECRET],
-        'audience': f'https://{os.environ[ENV_AUTH0_DOMAIN]}/api/v2/'
-    }
-
-    headers: dict = {'Content-Type': 'application/json'}
-
-    response_data: Response = requests.post(f'https://{os.environ[ENV_AUTH0_DOMAIN]}/oauth/token',
-                                            json=payload,
-                                            headers=headers)
-    json_data: dict = response_data.json()
-    access_token = json_data['access_token']
-
-    return access_token
-
-
-def get_auth0_user_data(access_token: str, auth0_id_or_email: str) -> dict:
-    """
-    Matches an Auth0 ID or email to retrieve the associated user data.
-
-    This function checks if the provided identifier is an email or an Auth0 ID, constructs the appropriate URL,
-    and sends a GET request to retrieve the user account data. If the identifier is an email, it searches by email;
-    otherwise, it searches by Auth0 ID.
-
-    Args:
-        access_token (str): The Auth0 access token for authorization.
-        auth0_id_or_email (str): The Auth0 ID or email to match.
-
-    Returns:
-        dict: The matched user data.
-
-    Raises:
-        BadRequest: If no Auth0 user is associated with the provided identifier.
-    """
-    auth0_user_data: dict
-
-    headers: dict = {'Authorization': 'Bearer ' + access_token}
-    regex_email = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}\b'
-
-    encoded_email_or_auth0_id = urllib.parse.quote(auth0_id_or_email)
-
-    auth0_domain = os.environ[ENV_AUTH0_DOMAIN]
-    if re.fullmatch(regex_email, auth0_id_or_email):
-        url = f'https://{auth0_domain}/api/v2/users?q=email:{encoded_email_or_auth0_id}&search_engine=v3'
-    else:
-        url = f'https://{auth0_domain}/api/v2/users/{encoded_email_or_auth0_id}'
-
-    response: Response = requests.get(url, headers=headers)
-    if response.status_code != 200:
-        raise BadRequest(description=f'No Auth0 user associated with "{auth0_id_or_email}"')
-
-    auth0_user_data = response.json()
-    if auth0_user_data and isinstance(auth0_user_data, list):
-        auth0_user_data: dict = auth0_user_data[0]
-
-    return auth0_user_data
-
-
-def delete_auth0_user(auth0_id: str) -> None:
-    """
-    Deletes an Auth0 user account based on the provided Auth0 ID.
-
-    This function retrieves an Auth0 management API token, constructs the URL for the user deletion endpoint,
-    and sends a DELETE request to remove the user.
-
-    Args:
-        auth0_id (str): The Auth0 ID of the user to delete.
-
-    Raises:
-        AssertionError: If the DELETE request does not return a status code of 204.
-    """
-    auth0_token = get_auth0_management_api_token()
-    url = f'https://{os.environ[ENV_AUTH0_DOMAIN]}/api/v2/users/{urllib.parse.quote(auth0_id)}'
-    headers = {'Authorization': 'Bearer ' + auth0_token}
-    res: Response = requests.delete(url, headers=headers)
-    assert res.status_code == 204
 
 
 ################

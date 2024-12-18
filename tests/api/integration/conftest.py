@@ -34,7 +34,7 @@ from nexusml import constants  # Import the whole module for monkey patches
 from nexusml.api import create_app
 from nexusml.api.endpoints import ENDPOINT_ORG_FILES
 from nexusml.api.endpoints import ENDPOINT_TASK_FILES
-from nexusml.api.ext import cache
+from nexusml.api.external.ext import cache
 from nexusml.api.resources.organizations import Organization
 from nexusml.api.resources.tasks import Task
 from nexusml.api.utils import API_DOMAIN

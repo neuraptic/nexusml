@@ -20,7 +20,7 @@ from sqlalchemy.orm.attributes import InstrumentedAttribute
 from sqlalchemy.sql.elements import UnaryExpression
 from werkzeug.exceptions import BadRequest
 
-from nexusml.api.ext import cache
+from nexusml.api.external.ext import cache
 from nexusml.api.resources import DuplicateResourceError
 from nexusml.api.resources import ImmutableResourceError
 from nexusml.api.resources import InvalidDataError

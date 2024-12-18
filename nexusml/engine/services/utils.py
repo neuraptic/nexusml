@@ -5,7 +5,7 @@ import os
 from flask import render_template
 from flask_mail import Message
 
-from nexusml.api.ext import mail
+from nexusml.api.external.ext import mail
 from nexusml.api.resources.organizations import User
 from nexusml.api.resources.tasks import Task
 from nexusml.constants import API_NAME
